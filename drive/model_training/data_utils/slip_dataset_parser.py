@@ -678,10 +678,10 @@ class SlipDatasetParser:
         
         cmd_body_x = np.zeros_like(cmd_left)
         cmd_body_omega = np.zeros_like(cmd_left)
-
+        
         for i in range(cmd_body_x.shape[0]):
             cmd_vel = np.vstack((cmd_left[i,:],cmd_right[i,:]))
-            body_vel = compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
+            body_vel =  self.ideal_diff_drive.compute_body_vel(cmd_vel) #compute_body_vel_IDD( , robot='warthog-wheel')
             cmd_body_x[i,:] = body_vel[0,:]
             cmd_body_omega[i,:] = body_vel[1,:]
 
@@ -713,7 +713,9 @@ class SlipDatasetParser:
         cmd_left = np.mean(column_type_extractor(df_last_window, 'cmd_left',verbose=False),axis=1)
         cmd_right = np.mean(column_type_extractor(df_last_window, 'cmd_right',verbose=False),axis=1)
         cmd_vel = np.vstack((cmd_left,cmd_right))
-        body_vel = compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
+        
+        
+        body_vel = self.ideal_diff_drive.compute_body_vel(cmd_vel) # compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
 
         
         

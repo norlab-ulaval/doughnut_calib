@@ -60,7 +60,9 @@ class GraphicProductionDrive():
         mpl.rcParams['lines.dashed_pattern'] = [2, 2]
         mpl.rcParams['lines.linewidth'] = 1.0
 
-        self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew"}
+        self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose","boreal":"lightgray","sand":"lemonchiffon"}
+
+
     def create_window_filter_axis(self):
         increment = 1/(self.n_iteration_by_windows-1)
 
@@ -78,7 +80,6 @@ class GraphicProductionDrive():
         else:
             ax.vlines(np.array([0]),ymin=-max_wheel_speed,ymax=max_wheel_speed,color="black",ls="dashdot",lw=2)
             ax.hlines(np.array([0]),xmin=-max_wheel_speed,xmax=max_wheel_speed,color="black",ls="dashdot",lw=2)
-        
 
         return ax
     
@@ -377,7 +378,7 @@ class GraphicProductionDrive():
     def scatter_plot_heat_map(self,df,column_x_y_z, ax_to_plot, cmap_name,background_terrain_dict,ylim,xlim,global_cmap,labels_xyz,alpha,show_x_label=False,list_operation_points = []):
 
         norm_slip = mpl.colors.Normalize(0, vmax=np.abs(global_cmap[1][column_x_y_z[2]].max()))
-        norm_slip = mpl.colors.Normalize(0, vmax=2)
+        #norm_slip = mpl.colors.Normalize(0, vmax=2)
     
         if not global_cmap[0]:
 

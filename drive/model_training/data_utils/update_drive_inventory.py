@@ -199,10 +199,14 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_in
     for robot in path_to_data.iterdir():
         if robot == "to_class":
             continue
+        if robot == "marmotte":
+            print("robot is marmotte")
+            continue
         else:
             for traction in robot.iterdir():
                 if robot == traction:
                         continue # Case when the folder is empty
+                
                 else:
                     
                     for terrain in traction.iterdir():
@@ -242,7 +246,16 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_in
                                     
                                     robot_name,traction_name,terrain_name = extract_components_from_names(str(experiments_path))
 
-
+                                    ## append robot terrain type to df_slip
+                                    # 
+                                    size = df_slip.shape[0] 
+                                    dico_2_update = {
+                                        "terrain": [terrain.parts[-1]] * size,
+                                        "robot": [robot.parts[-1]] * size,
+                                        "traction": [traction.parts[-1]] * size,
+                                    }
+                                    df_slip_2_save = pd.concat((pd.DataFrame.from_dict(dico_2_update),df_slip ),axis=1)
+                                    
                                     id = str(experiment.parts[-1])
                                     
                                     dico_dataset_specific = {
@@ -259,7 +272,7 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_in
                                     }
                                     dico_ready_datasets.update(copy.copy(dico_dataset_specific))
 
-                                    dictionnary_dataframe["slip_dataset"].append(append_selection_column(df_slip,metadata_dict,config_file_robot))
+                                    dictionnary_dataframe["slip_dataset"].append(append_selection_column(df_slip_2_save,metadata_dict,config_file_robot))
                                     dictionnary_dataframe["steady_state_dataset"].append(append_selection_column(df_steady_state,metadata_dict,config_file_robot))
                                     
     # Write data to a YAML file
@@ -302,7 +315,6 @@ if __name__=="__main__":
     else:
         print("Video production is disabled.")
 
-    name = "warthog_wheels_gravel_2024_8_6_11h37s32"
 
     path_to_update_config_file = pathlib.Path.cwd().parent.parent.parent/"drive_datasets"/"scripts"/"config"/"update_config.yaml"
     

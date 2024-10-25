@@ -1,10 +1,21 @@
-import numpy as np
-import pandas as pd 
-
-data= {"test":[1,2,3,4,5,6,7,8,9,10],"test2":[1,2,3,4,5,6,7,8,9,10],"test3":[1,2,3,4,5,6,7,8,9,10]}
+import numpy as np 
 
 
-df = pd.DataFrame.from_dict(data)
+
+def test():
+
+    list_ = [i for i in range(10)]
+
+    yield list_ 
 
 
-print(np.max(df[["test","test3"]],axis=1))
+def compute_square():
+
+
+    x = np.array(test)
+
+    print(x)
+    return 
+
+
+compute_square()

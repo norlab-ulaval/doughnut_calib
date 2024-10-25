@@ -1,0 +1,38 @@
+metric:
+  kinetic_energy:
+    robot:
+      husky:
+        width: 0.6604   #along y
+        length: 0.8382  #along x 
+        radius: 0.16 # Computed by drive
+        basewidth: 0.55 # Computed by drive
+        masse: 75 # kg
+      warthog:
+        width: 1.52  #along y
+        length: 2.13 #along x 
+        wheel_radius: 0.3 # Computed by drive 
+        basewidth: 1.08 # Computed by drive
+        masse: 497 #kg
+
+datasets:
+  drive_dataset:
+    path_dataset: "drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl"
+
+    filter_columns_and_values:
+      robot: "warthog"
+      traction: "wheels"
+      max_linear_speed_sampled: 5.0
+
+    columns_names: # The column prefix that is commun to all the column 0-120 of the same type
+      cmd_left_wheel: "cmd_left"
+      cmd_right_wheel: "cmd_right"
+      cmd_body_lin_vel: "cmd_body_vel_x"
+      cmd_body_yaw_vel: "cmd_body_vel_yaw"
+      gt_left_wheel: "left_wheel_vel"
+      gt_right_wheel: "right_wheel_vel"
+      gt_body_lin_vel: "step_frame_vx"
+      gt_body_yaw_vel: "step_frame_vyaw"
+      gt_body_y_vel: "step_frame_vy"
+    rate: 20
+    format: "n_cmd x horizon"
+    
