@@ -67,7 +67,7 @@ husky_wheels_tile_2023_12_12_12h15:
   roboticist: dominicbaril
   terrain: datasets/data/husky/wheels/tile/husky
   traction: ws/src/DRIVE/drive
-last_update_time: 2024-10-22 22:09:51.851429
+last_update_time: 2024-10-30 15:03:38.038726
 warthog_wheels_asphalt_2024_8_7_10h31s34:
   calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
   - /

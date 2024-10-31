@@ -11,9 +11,10 @@ import pathlib
 import matplotlib.animation as animation
 from matplotlib import colormaps as cm
 from extractors import *
+from tqdm import tqdm
 class GraphicProductionDrive():
 
-    def __init__(self,path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",rate=20):
+    def __init__(self,path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",result_folder_prefix="",rate=20):
         """open the dataframe
 
         Args:
@@ -28,7 +29,7 @@ class GraphicProductionDrive():
             path_to_dataframe_diamond = pathlib.Path(path_to_dataframe_diamond)
             print("test2")
 
-        self.path_to_analysis = path_to_dataframe_slip.parent/"analysis"
+        self.path_to_analysis = path_to_dataframe_slip.parent/(result_folder_prefix+"analysis")
 
         if self.path_to_analysis.is_dir() == False:
             self.path_to_analysis.mkdir()
@@ -81,6 +82,18 @@ class GraphicProductionDrive():
             ax.vlines(np.array([0]),ymin=-max_wheel_speed,ymax=max_wheel_speed,color="black",ls="dashdot",lw=2)
             ax.hlines(np.array([0]),xmin=-max_wheel_speed,xmax=max_wheel_speed,color="black",ls="dashdot",lw=2)
 
+        # Erreur est de (-5,0), (-5,0)
+        #cmd_max_speed = np.array([[-5,0,5,0,-5],[0,5,0,-5,0]])
+        cmd_max_speed = np.array([[-5,-5,5,5,-5],[-5,5,5,-5,-5]])
+        b = 1.08
+        jac = np.array([[1/2,1/2],[-1/b,1/b]])*0.3
+        jac_inv = np.linalg.inv(jac)
+        
+        cmd_wheel = jac_inv @ cmd_max_speed
+
+        ax.plot(cmd_wheel[1,:],cmd_wheel[0,:],color="red",label="max lin and ang speed",lw=2)
+
+        
         return ax
     
     def add_small_turning_radius_background(self,ax,first_time =False):
@@ -88,7 +101,7 @@ class GraphicProductionDrive():
         b = 1.08
         r =0.3 
 
-        jacob = np.array([[1/2,1/2],[1/b, -1/b]])
+        jacob = np.array([[1/2,1/2],[-1/b, 1/b]]) * r
         n_points=11
         ligne_1 = np.linspace(-max_wheel_speed,max_wheel_speed,n_points).reshape(n_points,1)
         other_coordinates = np.zeros((n_points,1))
@@ -97,19 +110,32 @@ class GraphicProductionDrive():
         cmd_1_body = jacob @ cmd_1.T
         cmd_2_body = jacob @ np.hstack((other_coordinates,ligne_1)).T
 
+        cmd_max_speed_wheel = np.array([[-max_wheel_speed,-max_wheel_speed,max_wheel_speed,max_wheel_speed,-max_wheel_speed],
+                                  [-max_wheel_speed,max_wheel_speed,max_wheel_speed,-max_wheel_speed,-max_wheel_speed]])
+        cmd_max_speed = jacob @ cmd_max_speed_wheel
+        max_body_slip  = np.array([(-5,-5), (-5, 5), (5, 5), (5, -5),(-5,-5)]).T  # A square
+
+
         if first_time:
             ax.plot(cmd_1_body[0,:],cmd_1_body[1,:],color="black",ls="dashdot",label=r"$r = \frac{b}{2}$",lw=2)
             ax.plot(cmd_2_body[0,:],cmd_2_body[1,:],color="black",ls="dashdot",lw=2)
+            
+            ax.plot(cmd_max_speed[1,:],cmd_max_speed[0,:],color="black",ls="dashdot",lw=2)
+            ax.plot(max_body_slip[1,:],max_body_slip[0,:],color="red",ls="dashdot",lw=2)
+            
         else:
-            ax.plot(cmd_1_body[0,:],cmd_1_body[1,:],color="black",ls="dashdot",lw=2)
+            ax.plot(cmd_1_body[0,:],cmd_1_body[1,:],color="black",lw=2)
             ax.plot(cmd_2_body[0,:],cmd_2_body[1,:],color="black",ls="dashdot",lw=2)
             
+            ax.plot(cmd_max_speed[1,:],cmd_max_speed[0,:],color="black",ls="dashdot",lw=2)
+            ax.plot(max_body_slip[1,:],max_body_slip[0,:],color="red",ls="dashdot",lw=2)
         
         return ax
     
     def wheel_graph_info(self,ax):
         
         max_wheel_speed = 16.6667 # Les roues decluches. rad/s
+        
         ax.vlines(np.array([-max_wheel_speed,max_wheel_speed]),ymin=-max_wheel_speed,ymax=max_wheel_speed,color="black",label="vehicle limits")
         ax.hlines(np.array([-max_wheel_speed,max_wheel_speed]),xmin=-max_wheel_speed,xmax=max_wheel_speed,color="black")
 
@@ -253,6 +279,113 @@ class GraphicProductionDrive():
         
         return fig 
     
+    def plot_histogramme(self,ax,df,column_of_interest,transient_only_flag=True,nb_bins=30,x_lim=(0,0),densitybool=True):
+
+
+        if transient_only_flag:
+            imu_acceleration_x = column_type_extractor(df,column_of_interest,verbose=False)
+            steady_state_mask = column_type_extractor(df,"steady_state_mask")
+
+            steady_state_mask = steady_state_mask[:,:imu_acceleration_x.shape[1]]
+
+            mask = np.where(steady_state_mask==0,True, False)
+            imu_acceleration_x = imu_acceleration_x[mask]
+
+            labels_y = column_of_interest+"\n transient_state"
+        
+        else:
+            imu_acceleration_x= column_type_extractor(df,column_of_interest,verbose=False,steady_state=True)
+            labels_y = column_of_interest
+
+
+        
+        if x_lim == (0,0):
+                ax.hist(imu_acceleration_x,bins=nb_bins,density=densitybool)
+        else:
+                ax.hist(imu_acceleration_x,bins=nb_bins,range=x_lim, density=densitybool)
+        ax.set_ylabel(f"Probability density function (n = {len(np.ravel(imu_acceleration_x))})")
+
+        ax.set_xlabel(labels_y)
+    def set_commun_y_axis_lim(self,axs):
+
+        if len(axs.shape) != 1:
+
+            for row in range(axs.shape[0]):
+                # Get the y-limits of the first axis
+                first_ylim = axs[row,0].get_ylim()
+                # Find the maximum y-limit values
+                max_ylim = (min(first_ylim[0], *[ax.get_ylim()[0] for ax in axs[row,:]]),
+                            max(first_ylim[1], *[ax.get_ylim()[1] for ax in axs[row,:]]))
+                
+                for ax in axs[row,:]:
+                    ax.set_ylim(max_ylim)
+        
+    def acceleration_histogram(self,df_all_terrain,subtitle="",nb_bins=30,x_lim=(-6,6),densitybool=True,transientflag=True):
+        
+        list_terrain = list(df_all_terrain["terrain"].unique())
+        size = len(list_terrain)
+
+        fig, axs = plt.subplots(4,size)
+        fig.set_figwidth(3*size)
+        fig.set_figheight(size*3)
+        plt.subplots_adjust(wspace=0.8, hspace=1)     
+        
+        for i in range(size):  
+            if size == 1:
+                ax_to_plot = axs[0]
+                ax_to_plot_2 = axs[1]
+                ax_to_plot_3 = axs[2]
+                ax_to_plot_4 = axs[3]
+            else:
+                ax_to_plot = axs[0,i]
+                ax_to_plot_2 = axs[1,i]
+                ax_to_plot_3 = axs[2,i]
+                ax_to_plot_4 = axs[3,i]
+            
+            terrain = list_terrain[i]
+            df = df_all_terrain.loc[df_all_terrain["terrain"]==terrain]   
+            
+            
+            ax_to_plot.set_title(f"acceleration_x on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+            self.plot_histogramme(ax_to_plot,df,"imu_acceleration_x",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            ax_to_plot.set_facecolor(self.color_dict[terrain])
+            ax_to_plot.vlines(np.array([-5,5]),0,ax_to_plot.get_ylim()[1],color="red")
+
+
+            ax_to_plot_2.set_title(f"acceleration_y on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+            self.plot_histogramme(ax_to_plot_2,df,"imu_acceleration_y",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            ax_to_plot_2.set_facecolor(self.color_dict[terrain])
+            #ax_to_plot_2.vlines(np.array([-5,5]),0,ax_to_plot_2.get_ylim()[1],color="red")
+            
+
+            ax_to_plot_3.set_title(f"acceleration yaw from \n deriv icp on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+            self.plot_histogramme(ax_to_plot_3,df,"step_frame_deriv_vyaw_acceleration",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            ax_to_plot_3.set_facecolor(self.color_dict[terrain])
+            ax_to_plot_3.vlines(np.array([-4,4]),0,ax_to_plot_3.get_ylim()[1],color="red")
+            
+            
+
+            ax_to_plot_4.set_title(f"acceleration_yaw from \n deriv imu yaw vel {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+            self.plot_histogramme(ax_to_plot_4,df,"imu_deriv_vyaw_acceleration",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            ax_to_plot_4.set_facecolor(self.color_dict[terrain])
+            ax_to_plot_4.vlines(np.array([-4,4]),0,ax_to_plot_4.get_ylim()[1],color="red")
+            
+        if subtitle=="":
+            fig.suptitle(f"Acceleration_histogram for all_types_of_terrain",fontsize=14)
+        else:
+            fig.suptitle(subtitle + f"Acceleration_histogram for all_types_of_terrain",fontsize=14)
+        #fig.patch.set_facecolor(color_background)
+        
+        #fig.patch.set_facecolor(color_background)
+        #plt.tight_layout()
+        
+                    
+
+        # Apply the same y-limits to all axes
+        self.set_commun_y_axis_lim(axs)
+        
+        return fig 
+    
     def scatter_diamond_displacement_graph_diff(self,df_all_terrain,subtitle=""):
         
         list_terrain = df_all_terrain["terrain"].unique()
@@ -265,9 +398,6 @@ class GraphicProductionDrive():
         alpha_parama= 0.3
         y_lim = 6 * 2
         x_lim = 8.5 * 2
-        
-        
-            
         
         for i in range(size):  
             if size == 1:
@@ -539,10 +669,10 @@ class GraphicProductionDrive():
             terrain = list_terrain[i]
             
             df = df_all_terrain.loc[df_all_terrain["terrain"]==terrain]
-            col_operation_points = ["left_wheel_vel_operation_points","right_wheel_vel_operation_points"]
+            col_operation_points = ["right_wheel_vel_operation_points","left_wheel_vel_operation_points"]
             
-            labels_xyz  = ["Left wheel angular velocity [rad/s]" , "Right wheel angular velocity [rad/s]",""] 
-            column_x_y_z = ["cmd_left_wheels","cmd_right_wheels", "slip_wheel_left_ss"]
+            labels_xyz  = ["Right wheel angular velocity [rad/s]","Left wheel angular velocity [rad/s]",""] 
+            column_x_y_z = ["cmd_right_wheels","cmd_left_wheels", "slip_wheel_left_ss"]
             show_x_label = False
             #### Slip x 
             if size == 1:
@@ -586,10 +716,10 @@ class GraphicProductionDrive():
         
         fig.tight_layout()
 
-        print('Note that the yaw angle in the the smooth version is the IMU')
+        #print('Note that the yaw angle in the the smooth version is the IMU')
 
         return fig
-    def produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(self,robiticis_specific=True):
+    def produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(self,robiticis_specific=True,densitybool=True):
 
         df_diamond = self.df_diamond
 
@@ -617,26 +747,38 @@ class GraphicProductionDrive():
                 list_title.append(f"All roboticist with a maximum linear sampling speed of {sampling_lin_speed} m/s")
                 list_file_name.append(f"{fig_prefix}_max_sampling_lin_speed_{sampling_lin_speed}_all.pdf")
         # Produce the graphs 
-        for title, df,file_name in zip(list_title,list_df_to_use,list_file_name):
+        for title, df,file_name in tqdm(zip(list_title,list_df_to_use,list_file_name)):
+
             fig = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title)
             fig.savefig(path_to_save/("body_slip_"+file_name),format="pdf")
             plt.close('all')
+            print("fig1 done")
             fig2 = self.plot_diamond_graph_wheel_slip_heat_map(df,subtitle=title,global_cmap = True)
             fig2.savefig(path_to_save/("wheel_slip_"+file_name),format="pdf")
             plt.close('all')
+            print("fig2 done")
             fig3 = self.scatter_diamond_displacement_graph(df,subtitle=title)
             fig3.savefig(path_to_save/("displacement_diamond_"+file_name),format="pdf")
             plt.close('all')
-            fig4 = self.scatter_diamond_displacement_graph_diff(df,subtitle=title)
-            fig4.savefig(path_to_save/("diff_displacement_diamond_"+file_name),format="pdf")
-            plt.close('all')
-            fig5 = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title,diff_referential=True)
-            fig5.savefig(path_to_save/("diff_frame_body_slip_"+file_name),format="pdf")
-            plt.close('all')
-            fig6 = self.plot_diamond_graph_wheel_slip_heat_map(df,subtitle=title,global_cmap = True,diff_referential=True)
-            fig6.savefig(path_to_save/("diff_frame_wheel_slip_"+file_name),format="pdf")
-            plt.close('all')
+            print("fig3 done")
+            #fig4 = self.scatter_diamond_displacement_graph_diff(df,subtitle=title)
+            #fig4.savefig(path_to_save/("diff_displacement_diamond_"+file_name),format="pdf")
+            #plt.close('all')
+            #fig5 = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title,diff_referential=True)
+            #fig5.savefig(path_to_save/("diff_frame_body_slip_"+file_name),format="pdf")
+            #plt.close('all')
+            #fig6 = self.plot_diamond_graph_wheel_slip_heat_map(df,subtitle=title,global_cmap = True,diff_referential=True)
+            #fig6.savefig(path_to_save/("diff_frame_wheel_slip_"+file_name),format="pdf")
+            #plt.close('all')
 
+            fig7 = self.acceleration_histogram(df,subtitle="transient",nb_bins=30,x_lim=(-6,6),densitybool=densitybool,transientflag=True)
+            fig7.savefig(path_to_save/("acceleration_transient_hist"+file_name),format="pdf")
+            plt.close('all')
+            print("fig7 done")
+            fig8 = self.acceleration_histogram(df,subtitle="all",nb_bins=30,x_lim=(-6,6),densitybool=densitybool,transientflag=False)
+            fig8.savefig(path_to_save/("acceleration_all_hist"+file_name),format="pdf")
+            plt.close('all')
+            print("fig8 done")
 
 
     def add_all_labels(self,axs, list_y_label,list_x_labels):
@@ -901,7 +1043,31 @@ class GraphicProductionDrive():
             fig.canvas.mpl_connect('key_press_event', lambda event: self.on_key(event, frame_index,np.ravel(axs),list_data,list_scatter_or_quiver,graph_style,fig,self.step_shape[0]))
             plt.show()
 
+
+
+def plot_all_unfiltered_data():
+    path_to_dataframe_slip = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl" 
+    path_to_dataframe_diamond= "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
+    path_to_config_file=""
+
+    
+    graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="")
+    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=False)
+    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=True)
+    
+
+def plot_all_warthog_filtered_data():
+    path_to_dataframe_slip = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_slip_dataset.pkl"
+    path_to_dataframe_diamond= "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_steady_state_dataset.pkl"
+
+    path_to_config_file=""
+
+    graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",result_folder_prefix="filtered_warthog_results")
+    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=False)
+    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=True)
+    
 if __name__ == "__main__":
+
 
     #path_2_training_folder = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/gravel/warthog_wheels_gravel_ral2023/model_training_datasets")
 
@@ -922,16 +1088,7 @@ if __name__ == "__main__":
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(global_cmap=True)
     #plt.show()
     #
-#
-    path_to_dataframe_slip = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl" 
-    path_to_dataframe_diamond= "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    path_to_config_file=""
-
-    
-    graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="")
-    
-    graphic_designer.produce_video_time_constants(video_saving_path=pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/scripts"),live_observation=False)
-    
+    plot_all_warthog_filtered_data()
     
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(graphic_designer.df_diamond,diff_referential=True)
 

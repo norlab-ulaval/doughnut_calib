@@ -225,3 +225,23 @@ def reshape_into_6sec_windows(array_to_reshape, n_window=3):
 
     return array_to_reshape
 
+def create_columns_names_from_dict_with_names(list_commun_col,dico,new_dico):
+
+    for col in list_commun_col:
+        data = dico[col]
+        for i in range(data.shape[1]):
+            new_dico[col+f"_{i}"] = data[:,i]
+
+    return new_dico
+
+def extract_df_colummn_into_6_sec_dico(df,commun_type_name):
+
+    array = reshape_into_6sec_windows(column_type_extractor(df,commun_type_name))
+
+    dico = {}
+
+    for i in range(array.shape[1]):
+
+        dico[commun_type_name+f"_{i}"] = array[:,i]
+    
+    return dico

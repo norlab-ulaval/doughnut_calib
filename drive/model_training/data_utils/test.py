@@ -1,21 +1,23 @@
-import numpy as np 
+import pathlib 
+import pandas as pd 
+import extractors
+import matplotlib.pyplot as plt
 
+df = pd.read_pickle("launch/test.pkl")
 
+extractors.print_column_unique_column(df)
 
-def test():
+df["right_wheel_current"] = df["right_wheel_current"].astype(float)
+df["left_wheel_current"] = df["left_wheel_current"].astype(float)
+df["left_wheel_voltage"] = df["left_wheel_voltage"].astype(float)
+df["right_wheel_voltage"] = df["right_wheel_voltage"].astype(float)
 
-    list_ = [i for i in range(10)]
+# Get descriptive statistics
+left_wheel_current_desc = df["left_wheel_current"].describe()
+left_wheel_voltage_desc = df["left_wheel_voltage"].describe()
+right_wheel_voltage_desc = df["right_wheel_voltage"].describe()
 
-    yield list_ 
-
-
-def compute_square():
-
-
-    x = np.array(test)
-
-    print(x)
-    return 
-
-
-compute_square()
+# Print the results
+print("Left Wheel Current Description:\n", left_wheel_current_desc)
+print("\nLeft Wheel Voltage Description:\n", left_wheel_voltage_desc)
+print("\nRight Wheel Voltage Description:\n", right_wheel_voltage_desc)
