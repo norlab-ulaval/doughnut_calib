@@ -8,7 +8,7 @@ calibration_node:
     cmd_rate: 20
     encoder_rate: 30
     max_lin_speed: 1.0
-    max_ang_speed: 1.0
+    max_ang_speed: 2.0
     step_len: 6.0
     n_calib_steps: 5
     dead_man_button: True

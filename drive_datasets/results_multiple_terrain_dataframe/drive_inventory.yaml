@@ -21,6 +21,29 @@ husky_wheels-deflated_tile_2023_12_12_16h16:
   roboticist: dominicbaril
   terrain: datasets/data/husky/wheels-deflated/tile/husky
   traction: ws/src/DRIVE/drive
+husky_wheels_avide_2024_11_3_15h4s4:
+  calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
+  - /
+  - home
+  - nicolassamson
+  - ros2_ws
+  - src
+  - DRIVE
+  - drive_datasets
+  - data
+  - husky
+  - wheels
+  - avide
+  - husky_wheels_avide_2024_11_3_15h4s4
+  - config_file_used
+  - _husky.config.yaml
+  id: husky_wheels_avide_2024_11_3_15h4s4
+  path_2_slip_dataset: /home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/husky/wheels/avide/husky_wheels_avide_2024_11_3_15h4s4/model_training_datasets/slip_dataset_all.pkl
+  path_2_steady_state_dataset: /home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/husky/wheels/avide/husky_wheels_avide_2024_11_3_15h4s4/model_training_datasets/steady_state_results.pkl
+  robot: /home/nicolassamson/ros2
+  roboticist: nicolassamson
+  terrain: datasets/data/husky/wheels/avide/husky
+  traction: ws/src/DRIVE/drive
 husky_wheels_boreal_2024_25_01_12h15:
   calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
   - /
@@ -67,7 +90,7 @@ husky_wheels_tile_2023_12_12_12h15:
   roboticist: dominicbaril
   terrain: datasets/data/husky/wheels/tile/husky
   traction: ws/src/DRIVE/drive
-last_update_time: 2024-11-01 17:56:23.866591
+last_update_time: 2024-11-03 15:13:46.899381
 warthog_wheels_asphalt_2024_8_7_10h31s34:
   calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
   - /

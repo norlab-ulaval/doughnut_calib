@@ -61,7 +61,8 @@ class GraphicProductionDrive():
         mpl.rcParams['lines.dashed_pattern'] = [2, 2]
         mpl.rcParams['lines.linewidth'] = 1.0
 
-        self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose","boreal":"lightgray","sand":"lemonchiffon"}
+        self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose",
+                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white"}
 
 
     def create_window_filter_axis(self):

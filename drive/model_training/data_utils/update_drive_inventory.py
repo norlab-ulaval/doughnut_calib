@@ -198,24 +198,29 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_in
     dictionnary_dataframe = {"slip_dataset":[],"steady_state_dataset":[]}
     for robot in path_to_data.iterdir():
         if robot == "to_class":
+            print("\n"*5, "robot == to class")
             continue
         if robot == "marmotte":
-            print("robot is marmotte")
+            
+            print("\n"*5, "robot is marmotte")
             continue
         else:
             for traction in robot.iterdir():
                 if robot == traction:
+                        print("\n"*5, f"robot {robot} == traction {traction}")
                         continue # Case when the folder is empty
-                
+                        
                 else:
                     
                     for terrain in traction.iterdir():
                         if terrain == traction:
+                            print("\n"*5, f"terrain {terrain}== traction {traction}")
                             continue # Case when the folder is empty
                         else:
                             
                             for experiment in terrain.iterdir():
                                 
+                                print("Experiment : ", experiment)
                                 experiments_path =  experiment / "model_training_datasets"
                                 
                                 
@@ -274,7 +279,8 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_in
 
                                     dictionnary_dataframe["slip_dataset"].append(append_selection_column(df_slip_2_save,metadata_dict,config_file_robot))
                                     dictionnary_dataframe["steady_state_dataset"].append(append_selection_column(df_steady_state,metadata_dict,config_file_robot))
-                                    
+                                else:
+                                    print("\n"*5, "Missing folder model_training_datasets")
     # Write data to a YAML file
     with open(path_to_drive_inventory, 'w') as file:
         yaml.dump(dico_ready_datasets, file)
