@@ -67,7 +67,7 @@ class DriveMaestroNode(Node):
 
         self.callback_group = ReentrantCallbackGroup()
         #######
-        self.sub_node = rclpy.create_node('sub_node')
+        self.sub_node = rclpy.create_node(node_name='sub_node')
 
         # Inform the user to open the GUI aka foxglove interface.
         self.get_logger().info("Please open foxglove, connect to the robot and import the foxglove template located at ../DRIVE/gui/drive_gui")

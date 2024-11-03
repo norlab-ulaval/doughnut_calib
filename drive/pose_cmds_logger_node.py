@@ -6,11 +6,12 @@ from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 import threading
 
 from std_msgs.msg import Float64, Bool, String, Int32
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist,TwistStamped
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, JointState
 from norlab_controllers_msgs.srv import ExportData
 from std_srvs.srv import Empty
+from husky_msgs.msg import HuskyStatus
 import message_filters
 from drive_custom_srv.msg import PathTree
 import numpy as np
@@ -28,12 +29,20 @@ class LoggerNode(Node):
                 ('record_wheel_current',False),
                 ('record_wheel_voltage',False),
                 ('run_by_maestro',False),
+                ('right_wheel_encoder_velocity_index',2),
+                ('left_wheel_encoder_velocity_index',3),
+                ('type_of_encoder','Float64'), #Either joint_states or topic
+                ('cmd_msg_twist_stamped', False),
+                ('power_message_type', 'HuskyStatus')
             ]
         )
         self.record_wheel_current = self.get_parameter('record_wheel_current').get_parameter_value().bool_value
         self.record_wheel_voltage = self.get_parameter('record_wheel_voltage').get_parameter_value().bool_value
         self.run_by_maestro = self.get_parameter('run_by_maestro').get_parameter_value().bool_value
-        
+        self.type_of_encoder = self.get_parameter('type_of_encoder').get_parameter_value().string_value #Either joint_states or topic
+        self.cmd_msg_twist_stamped = self.get_parameter('cmd_msg_twist_stamped').get_parameter_value().bool_value
+        self.power_message_type = self.get_parameter('power_message_type').get_parameter_value().string_value
+
         #self.path_to_datasets_results_folder = self.get_parameter('path_to_datasets_results_folder').get_parameter_value().string_value
         
         self.calib_step_sub = self.create_subscription(
@@ -62,25 +71,51 @@ class LoggerNode(Node):
             'odometry_in',
             self.pose_callback,
             10)
-        self.encoder_left_sub = self.create_subscription(
-            Float64,
-            # '/left_drive/status/speed',
-            'wheel_vel_left_measured',
-            self.velocity_left_meas_callback,
+        
+        if self.type_of_encoder == "Float64":
+            self.encoder_left_sub = self.create_subscription(
+                Float64,
+                # '/left_drive/status/speed',
+                'wheel_vel_left_measured',
+                self.velocity_left_meas_callback,
+                10)
+            self.encoder_right_sub = self.create_subscription(
+                Float64,
+                # '/right_drive/status/speed',
+                'wheel_vel_right_measured',
+                self.velocity_right_meas_callback,
+                10)
+        elif self.type_of_encoder == "JointState":
+            
+            self.left_wheel_encoder_velocity_index = self.get_parameter('left_wheel_encoder_velocity_index').get_parameter_value().integer_value 
+            self.right_wheel_encoder_velocity_index = self.get_parameter('right_wheel_encoder_velocity_index').get_parameter_value().integer_value 
+            
+            self.wheel_listener = self.create_subscription(
+            JointState,
+            '/joint_states',
+            self.wheel_velocity_meas_callback,
             10)
-        self.encoder_right_sub = self.create_subscription(
-            Float64,
-            # '/right_drive/status/speed',
-            'wheel_vel_right_measured',
-            self.velocity_right_meas_callback,
-            10)
+        else:
+            self.get_logger().error("The type_of_encoder of encoder does not exist it needs to be either : JointState or Float64  ")
+        
+        
         self.imu_sub = self.create_subscription(
             Imu,
             # 'MTI_imu/data_unbiased',
             'imu_in',
             self.imu_callback,
             10)
-        self.cmd_vel_sub = self.create_subscription(
+        
+
+        if self.cmd_msg_twist_stamped:
+            self.cmd_vel_sub = self.create_subscription(
+            TwistStamped,
+            '/doughnut_cmd_vel',
+            self.cmd_vel_callback,
+            10)
+        else:
+        
+            self.cmd_vel_sub = self.create_subscription(
             Twist,
             '/doughnut_cmd_vel',
             self.cmd_vel_callback,
@@ -127,30 +162,56 @@ class LoggerNode(Node):
     
         # self.set_parameter('use_sim_time', True)
         if self.record_wheel_current:
-            self.right_wheel_current_listener = self.create_subscription(
-            Float64,
-            'right_wheel_current_in',
-            self.right_wheel_current_callback,
-            10)
+            if self.current_message_type == "HuskyStatus":
+                self.right_wheel_current_listener = self.create_subscription(
+                HuskyStatus,
+                'status',
+                self.right_wheel_current_callback_husky,
+                10)
 
-            self.left_wheel_current_listener = self.create_subscription(
-            Float64,
-            'left_wheel_current_in',
-            self.left_wheel_current_callback,
-            10)
+                self.left_wheel_current_listener = self.create_subscription(
+                HuskyStatus,
+                'status',
+                self.left_wheel_current_callback_husky,
+                10)
+            elif self.current_message_type == "Float64":
+                self.right_wheel_current_listener = self.create_subscription(
+                Float64,
+                'right_wheel_current_in',
+                self.right_wheel_current_callback,
+                10)
+
+                self.left_wheel_current_listener = self.create_subscription(
+                Float64,
+                'left_wheel_current_in',
+                self.left_wheel_current_callback,
+                10)
             
         if self.record_wheel_voltage:
-            self.right_wheel_voltage_listener = self.create_subscription(
-            Float64,
-            'right_wheel_voltage_in',
-            self.right_wheel_voltage_callback,
-            10)
-            
-            self.left_wheel_voltage_listener = self.create_subscription(
-            Float64,
-            'left_wheel_voltage_in',
-            self.left_wheel_voltage_callback,
-            10)
+            if self.current_message_type == "HuskyStatus":
+                self.right_wheel_voltage_listener = self.create_subscription(
+                HuskyStatus,
+                'status',
+                self.right_wheel_voltage_callback_husky,
+                10)
+
+                self.left_wheel_voltage_listener = self.create_subscription(
+                HuskyStatus,
+                'status',
+                self.left_wheel_voltage_callback_husky,
+                10)
+            elif self.current_message_type == "Float64":
+                self.right_wheel_voltage_listener = self.create_subscription(
+                Float64,
+                'right_wheel_voltage_in',
+                self.right_wheel_voltage_callback,
+                10)
+                
+                self.left_wheel_voltage_listener = self.create_subscription(
+                Float64,
+                'left_wheel_voltage_in',
+                self.left_wheel_voltage_callback,
+                10)
 
         
         if self.run_by_maestro == True:
@@ -190,6 +251,18 @@ class LoggerNode(Node):
     def left_wheel_voltage_callback(self, left_wheel_voltage_data):
         self.left_wheel_voltage_msg = left_wheel_voltage_data
 
+    def right_wheel_current_callback_husky(self, status_data : HuskyStatus):
+        self.right_wheel_current_msg = status_data.right_driver_current
+
+    def left_wheel_current_callback_husky(self, status_data : HuskyStatus):
+        self.left_wheel_current_msg = status_data.left_driver_current
+    
+    def right_wheel_voltage_callback_husky(self, status_data : HuskyStatus):
+        self.right_wheel_voltage_msg = status_data.right_driver_voltage
+
+    def left_wheel_voltage_callback_husky(self, status_data : HuskyStatus):
+        self.left_wheel_voltage_msg = status_data.left_driver_voltage
+
     
     def switch_callback(self, msg):
         self.calib_switch = msg
@@ -211,11 +284,21 @@ class LoggerNode(Node):
     def velocity_right_meas_callback(self, msg):
         self.velocity_right_meas = msg
 
+    def wheel_velocity_meas_callback(self, joinstate_data):
+        self.left_wheel_msg = Float64(data= joinstate_data.velocity[self.left_wheel_encoder_velocity_index])
+        self.right_wheel_msg = Float64(data= joinstate_data.velocity[self.right_wheel_encoder_velocity_index])
+    
+
     def imu_callback(self, msg):
         self.imu_vel = msg
 
     def cmd_vel_callback(self, msg):
-        self.cmd_vel = msg
+
+        if self.cmd_msg_twist_stamped:
+            self.cmd_vel = msg.twist
+        else:
+            self.cmd_vel = msg
+        
         ## TODO: Find a better way to run the self.log_msgs() function when spinning
 
     def log_msgs(self):
@@ -231,7 +314,6 @@ class LoggerNode(Node):
         ## DEBUG
         # self.get_logger().info(str(self.imu_vel.linear_acceleration.x))
         # self.get_logger().info(str(self.imu_vel.linear_acceleration.y))
-        #self.get_logger().info(str(self.right_wheel_current_msg.data))
         #self.get_logger().info(str(self.get_clock().now().nanoseconds))
         ## TODO: Fix clock call
         new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data, self.calib_step.data,

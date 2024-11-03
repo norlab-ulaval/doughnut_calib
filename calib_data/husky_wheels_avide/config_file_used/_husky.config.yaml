@@ -5,11 +5,11 @@
       auto_max_speed_characterization: False
       auto_cmd_model_characterization: False
       wheel_radius: 0.15875
-      wheel_baseline: 0.5384615384615384
+      wheel_baseline: 0.55
       cmd_rate: 20
       encoder_rate: 7
       max_lin_speed: 1.0
-      max_ang_speed: 2.0
+      max_ang_speed: 3.0
       step_len: 6.0
       n_calib_steps: 2
       dead_man_button: True

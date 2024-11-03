@@ -279,12 +279,14 @@ class MotionModelTrainerNode(Node):
         
         if self.run_by_maestro:
             # Load param of the calibration node
+            #self.get_logger().info(self.path_to_calibration_node_config_file)
             with open(self.path_to_calibration_node_config_file, 'r') as file:
                 prime_service = yaml.safe_load(file)
                 param_dict = prime_service["/drive/calibration_node"]["ros__parameters"]
                 self.rate = param_dict["cmd_rate"]
                 self.calib_step_time = param_dict["step_len"]
                 #param_dict[""] #TODO: modifié drive pour que training horizon et step_time_len peut être différent de 6. 
+            self.get_logger().info(self.path_to_input_space_calib)
             input_space_df = pd.read_pickle(self.path_to_input_space_calib)
             self.wheel_radius = input_space_df['calibrated_radius [m]'][0]
             self.baseline = input_space_df['calibrated_baseline [m]'][0] 

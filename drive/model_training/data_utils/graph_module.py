@@ -10,8 +10,7 @@ import pathlib
 
 import matplotlib.animation as animation
 from matplotlib import colormaps as cm
-from extractors import *
-from tqdm import tqdm
+from drive.model_training.data_utils.extractors import *
 class GraphicProductionDrive():
 
     def __init__(self,path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",result_folder_prefix="",rate=20):

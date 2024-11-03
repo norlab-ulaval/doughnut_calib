@@ -19,3 +19,6 @@
     wheel_radius: 0.3
     wheel_baseline: 1.08
     run_by_maestro: True
+    type_of_encoder: "Float64" #Either JointState or Float64
+    
+

@@ -1,10 +1,10 @@
 import rclpy
 import threading
 from rclpy.node import Node
-from geometry_msgs.msg import Twist, PoseArray, Pose
+from geometry_msgs.msg import Twist, PoseArray, Pose, TwistStamped
 import rclpy.time
-from sensor_msgs.msg import Joy, Imu
-from std_msgs.msg import Bool, String, Float64, Int32
+from sensor_msgs.msg import Joy, Imu,JointState
+from std_msgs.msg import Bool, String, Float64, Int32, Header
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 
@@ -42,8 +42,8 @@ class DriveNode(Node):
                 ('wheel_baseline', 1.0),
                 ('auto_max_speed_characterization', True),
                 ('auto_cmd_model_characterization', True),
-                ('max_lin_speed', 2.0),
-                ('max_ang_speed', 2.0),
+                ('max_lin_speed', 1.0),
+                ('max_ang_speed', 3.0),
                 ('step_len', 6.0),
                 ('n_calib_steps', 20),
                 ('dead_man_button', True),
@@ -55,9 +55,16 @@ class DriveNode(Node):
                 ('cmd_rate_param', 20),
                 ('encoder_rate_param', 4),
                 ('path_to_save_input_space_calib','none'),
-                ('run_by_maestro',False)
+                ('run_by_maestro',False),
+                ('type_of_encoder','Float64'), #Either joint_states or topic
+                ('left_wheel_encoder_velocity_index',1),
+                ('right_wheel_encoder_velocity_index',2),
+                ('cmd_msg_twist_stamped',False),
+                ('automatic_mode_dead_man_index',4),
             ]
         )
+
+        
         self.cmd_model = self.get_parameter('command_model').get_parameter_value().string_value
         self.define_speed_limits = self.get_parameter('auto_max_speed_characterization').get_parameter_value().bool_value
         self.define_cmd_model = self.get_parameter('auto_cmd_model_characterization').get_parameter_value().bool_value
@@ -78,6 +85,11 @@ class DriveNode(Node):
         self.encoder_rate = self.get_parameter('encoder_rate_param').get_parameter_value().integer_value
         self.path_to_save_input_space_calib = self.get_parameter('path_to_save_input_space_calib').get_parameter_value().string_value
         
+        self.type_of_encoder = self.get_parameter('type_of_encoder').get_parameter_value().string_value #Either joint_states or topic
+        self.cmd_msg_twist_stamped = self.get_parameter('cmd_msg_twist_stamped').get_parameter_value().bool_value #Either joint_states or topic
+        self.automatic_mode_dead_man_index = self.get_parameter('automatic_mode_dead_man_index').get_parameter_value().integer_value
+
+        self.get_logger().info("\n"*5+f"{self.cmd_msg_twist_stamped}")
         #load gui_message.yaml
         if self.wheel_radius == 100.0:
             self.get_logger().error("The config file is not correctly upload.")
@@ -92,6 +104,14 @@ class DriveNode(Node):
         self.run_by_maestro = self.get_parameter('run_by_maestro').get_parameter_value().bool_value
         #self.get_logger().info(f"run by maestro {self.run_by_maestro}")
         
+        if self.cmd_msg_twist_stamped:
+            
+            self.cmd_vel_pub_twist_stamped = self.create_publisher(TwistStamped,'cmd_vel_out',10)
+
+        else:
+            
+            self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel_out', 10)
+
         self.cmd_msg = Twist()
         self.joy_bool = Bool()
         self.good_calib_step = Bool()
@@ -99,13 +119,15 @@ class DriveNode(Node):
         self.calib_step_msg = Int32()
         self.calib_step_msg.data = 1
         
-        self.left_wheel_msg = Float64()
-        self.right_wheel_msg = Float64()
+        
+
         self.state_msg = String()
         self.state_msg.data = "idle"  # 4 possible states : idle, ramp_up, ramp_down, calib
         self.drive_operator_msg= String()
         self.drive_operator_msg.data = "Do the mapping"
         
+        self.left_wheel_msg = Float64()
+        self.right_wheel_msg = Float64()
         
         self.left_wheel_current_msg = Float64()
         self.right_wheel_current_msg = Float64()
@@ -119,16 +141,32 @@ class DriveNode(Node):
             self.joy_callback,
             1000)
         
-        self.left_wheel_listener = self.create_subscription(
+
+        if self.type_of_encoder == "Float64":
+            self.left_wheel_listener = self.create_subscription(
             Float64,
             'left_wheel_in',
             self.left_wheel_callback,
             1000)
-        self.right_wheel_listener = self.create_subscription(
-            Float64,
-            'right_wheel_in',
-            self.right_wheel_callback,
+            self.right_wheel_listener = self.create_subscription(
+                Float64,
+                'right_wheel_in',
+                self.right_wheel_callback,
+                1000)
+        elif self.type_of_encoder == "JointState":
+            
+            self.left_wheel_encoder_velocity_index = self.get_parameter('left_wheel_encoder_velocity_index').get_parameter_value().integer_value 
+            self.right_wheel_encoder_velocity_index = self.get_parameter('right_wheel_encoder_velocity_index').get_parameter_value().integer_value 
+
+            self.wheels_listener = self.create_subscription(
+            JointState,
+            '/joint_states',
+            self.joinstate_callback,
             1000)
+        else:
+            self.get_logger().error("The type_of_encoder of encoder does not exist it needs to be either : JointState or Float64  ")
+        
+        
         
         self.run_by_master_listener = self.create_subscription(
             Bool,
@@ -147,7 +185,7 @@ class DriveNode(Node):
         
             
 
-        self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel_out', 10)
+        
         self.joy_pub = self.create_publisher(Bool, 'joy_switch', 10)
         self.good_calib_step_pub = self.create_publisher(Bool, 'good_calib_step', 10)
         self.calib_step_pub = self.create_publisher(Int32, 'calib_step', 10)
@@ -192,6 +230,9 @@ class DriveNode(Node):
 
         self.srv_change_nbr_steps = self.create_service(SetNbrStep, 'change_nbr_steps', self.change_nbr_steps_to_do_callbacks) #service for starting drive
 
+        self.quaternion_x, self.quaternion_y, self.quaternion_z, self.quaternion_w = [0,0,0,1]
+        self.posex=0
+        self.posey= 0
     def change_nbr_steps_to_do_callbacks(self,request, response):
         
         # Add if idle only.
@@ -212,7 +253,7 @@ class DriveNode(Node):
         global dead_man
         global dead_man_index
         if self.dead_man_button == False:
-            if np.abs(joy_data.axes[self.dead_man_index]) >= np.abs(self.dead_man_threshold) or not joy_data.buttons[4]  \
+            if np.abs(joy_data.axes[self.dead_man_index]) >= np.abs(self.dead_man_threshold) or not joy_data.buttons[self.calib_trigger_index]  \
                     and joy_data.axes[self.calib_trigger_index] == 0 \
                     and joy_data.buttons[self.calib_trigger_index] == 0 :
 
@@ -236,6 +277,7 @@ class DriveNode(Node):
         else:
             if joy_data.buttons[self.calib_trigger_index] >= 0.8:
                 self.calib_trigger = True
+                
             else:
                 self.calib_trigger = False
 
@@ -244,6 +286,12 @@ class DriveNode(Node):
 
     def right_wheel_callback(self, right_wheel_data):
         self.right_wheel_msg = right_wheel_data
+
+
+    def joinstate_callback(self, joinstate_data):
+        self.left_wheel_msg = Float64(data= joinstate_data.velocity[self.left_wheel_encoder_velocity_index])
+        self.right_wheel_msg = Float64(data= joinstate_data.velocity[self.right_wheel_encoder_velocity_index])
+    
 
     def pose_callback(self, msg):
         self.posex = msg.pose.pose.position.x
@@ -257,11 +305,36 @@ class DriveNode(Node):
     def powertrain_vel(self, cmd, last_vel, tau_c):
         return last_vel + (1 / tau_c) * (cmd - last_vel) * (1 / self.encoder_rate)
 
-    def publish_cmd(self):
-        self.path_array_draw_pub()
-        self.cmd_vel_pub.publish(self.cmd_msg)
-        self.cmd_rate.sleep()
+    def create_header(self,frame_id='base_link'):
+        # Get the current time from the ROS clock
+        current_time = self.get_clock().now()
         
+        # Create a Header object
+        header = Header()
+        
+        # Set the time and frame_id
+        header.stamp = current_time.to_msg()
+        header.frame_id = frame_id
+    
+        return header
+    def publish_cmd(self):
+
+        if self.cmd_msg_twist_stamped:
+            header = self.create_header()
+            twist_stamped = TwistStamped()
+            twist_stamped.header = header
+            twist_stamped.twist = self.cmd_msg
+            
+            
+            
+            self.cmd_vel_pub_twist_stamped.publish(twist_stamped)
+            self.cmd_rate.sleep()
+
+        else:
+            self.cmd_vel_pub.publish(self.cmd_msg)
+            self.cmd_rate.sleep()
+
+        self.path_array_draw_pub()
 
     def publish_joy_switch(self):
         self.joy_pub.publish(self.joy_bool)
@@ -326,7 +399,7 @@ class DriveNode(Node):
         right_encoder_vels_mean = np.mean(right_encoder_vels_array)
         ## TODO: validate if wheel velocities are symmetrical
         self.calibrated_wheel_radius = command_linear_calibration / left_encoder_vels_mean
-        # self.get_logger().info("calibrated wheel radius :" + str(self.calibrated_wheel_radius))
+        self.get_logger().info("calibrated wheel radius :" + str(self.calibrated_wheel_radius))
 
         left_encoder_vels_list = []
         right_encoder_vels_list = []
@@ -366,7 +439,7 @@ class DriveNode(Node):
         right_encoder_vels_mean = np.mean(right_encoder_vels_array)
         ## TODO: validate if wheel velocities are symmetrical
         self.calibrated_baseline = -2 * self.calibrated_wheel_radius * left_encoder_vels_mean / command_angular_calibration
-        # self.get_logger().info("calibrated baseline: " + str(self.calibrated_baseline))
+        self.get_logger().info("calibrated baseline: " + str(self.calibrated_baseline))
 
         self.command_diff_drive_jacobian = self.calibrated_wheel_radius * np.array([[0.5, 0.5],
                                                                                     [-1/self.calibrated_baseline, 1/self.calibrated_baseline]])
@@ -523,7 +596,7 @@ class DriveNode(Node):
         #self.publish_drive_operator()
 
         
-        body_vels = self.random_uniform_sampler()
+        body_vels = self.random_uniform_sampler_within_low_lvl_limits()#self.random_uniform_sampler()
         self.lin_speed = 0.0
         self.ang_speed = 0.0
         self.calib_lin_speed = body_vels[0]
@@ -578,7 +651,7 @@ class DriveNode(Node):
                             self.state_msg.data = "drive_finished"
                             self.publish_state()
                         else:
-                            body_vels = self.random_uniform_sampler()   
+                            body_vels = self.random_uniform_sampler_within_low_lvl_limits()   
                             
 
 
