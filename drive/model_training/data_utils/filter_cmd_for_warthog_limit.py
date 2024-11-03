@@ -332,6 +332,66 @@ def generate_body_frame_domain_polygon(df,debug=False):
 
     return union_res
 
+
+def generate_wheel_frame_domain_polygon(df,debug=False):
+    """ATTENTION: YOU NEED TO PASS THE PREFILTERED DOMAIN. 
+
+    Args:
+        df (_type_): THE DF CONTAINING ONLY ONE TERRAIN
+        debug (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
+
+    
+    
+    min_ang_speed_limmit = 5.0 # The low-level_limit is constant # min(list(df['max_ang_speed_sampled'].unique())) ### Assume that the df was already prefiltered for the max lin speed
+    min_lin_speed_limmit = 5.0  #The low-level_limit is constant min(list(df['max_linear_speed_sampled'].unique()))
+    
+    # Define the coordinates of the polygon
+    max_body_slip  = np.array([(-min_lin_speed_limmit,-min_ang_speed_limmit,), 
+                      ( min_lin_speed_limmit,-min_ang_speed_limmit,), 
+                      ( min_lin_speed_limmit,min_ang_speed_limmit,), 
+                      (-min_lin_speed_limmit, min_ang_speed_limmit),
+                      (-min_lin_speed_limmit, -min_ang_speed_limmit)]).T # A square
+    
+    b = 1.08 
+    r =0.3 
+    jacobians = np.array([[1/2,1/2],[-1/b, 1/b]]) * r
+
+    max_body_in_wheel_constraints = (np.linalg.inv(jacobians) @ max_body_slip)
+    
+
+    
+    ### Assuming that wheel reaches their Steady state velocity after 2 s
+    left_wheel = column_type_extractor(df, "cmd_left")
+    right_wheel = column_type_extractor(df, "cmd_right")
+    
+    max_wheel_speed_cmd = max([np.max(np.abs(left_wheel)),np.max(np.abs(right_wheel))])
+    
+    max_wheel_coordinates = np.array([(-max_wheel_speed_cmd,-max_wheel_speed_cmd), (-max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, -max_wheel_speed_cmd)]).T  #    
+
+    ##### 
+    
+    
+    # Create the polygon
+    
+    rectangle = Polygon(zip(max_body_in_wheel_constraints[1,:],max_body_in_wheel_constraints[0,:]))
+
+    rectangle_2 = Polygon(zip(max_wheel_coordinates[1,:],max_wheel_coordinates[0,:]))
+    
+    union_res = rectangle.intersection(rectangle_2)
+
+    if debug:
+
+        fig, axs = plt.subplots(1,1)
+
+        x,y = union_res.exterior.xy
+        axs.plot(x,y)
+        plt.show()
+
+    return union_res
     
 
 
@@ -396,6 +456,8 @@ def filter_all_results_clearpath(path_to_df,robot,max_lin_sampling_speed,debug=F
     df_finall.to_pickle(path_to_save)
 
     extract_wheel_and_clearpath_limit_by_terrain(path_to_save)
+
+    
 ### Extract the maximum limits from the body. 
 
     
@@ -414,16 +476,20 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df):
 
     path_to_save =parent/("geom_limits_by_terrain_for_"+geom_suffix)
 
+    
     df = pd.read_pickle(path_to_df)
 
     list_terrain = list(df.terrain.unique())
 
-    df_geom = {}
+    df_geom = {"body":{},"wheel":{}}
+    
     for terrain in list_terrain:
         df_terrain = df.loc[df.terrain==terrain]
 
-        df_geom[terrain] = generate_body_frame_domain_polygon(df_terrain)
-
+        df_geom["body"][terrain] = generate_body_frame_domain_polygon(df_terrain)
+        
+        df_geom["wheel"][terrain] = generate_wheel_frame_domain_polygon(df_terrain)
+        
     # Dump the dictionary into a pickle file
     with open(path_to_save, 'wb') as file:
         pickle.dump(df_geom, file)

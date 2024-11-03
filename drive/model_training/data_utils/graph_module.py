@@ -292,7 +292,8 @@ class GraphicProductionDrive():
             imu_acceleration_x = imu_acceleration_x[mask]
 
             labels_y = column_of_interest+"\n transient_state"
-        
+
+            
         else:
             imu_acceleration_x= column_type_extractor(df,column_of_interest,verbose=False,steady_state=True)
             labels_y = column_of_interest
@@ -327,8 +328,8 @@ class GraphicProductionDrive():
 
         fig, axs = plt.subplots(4,size)
         fig.set_figwidth(3*size)
-        fig.set_figheight(size*3)
-        plt.subplots_adjust(wspace=0.8, hspace=1)     
+        fig.set_figheight(size*2.5)
+        plt.subplots_adjust(wspace=0.5, hspace=0.8)     
         
         for i in range(size):  
             if size == 1:
@@ -345,31 +346,83 @@ class GraphicProductionDrive():
             terrain = list_terrain[i]
             df = df_all_terrain.loc[df_all_terrain["terrain"]==terrain]   
             
-            
+            param_alpha = 0.5
             ax_to_plot.set_title(f"acceleration_x on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
             self.plot_histogramme(ax_to_plot,df,"imu_acceleration_x",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
             ax_to_plot.set_facecolor(self.color_dict[terrain])
+            
+            vx_acceleration_theo = column_type_extractor(df,"step_frame_vx_theoretical_acceleration")
+            ax_to_plot.hist(vx_acceleration_theo,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins)
             ax_to_plot.vlines(np.array([-5,5]),0,ax_to_plot.get_ylim()[1],color="red")
+            
 
+            
 
             ax_to_plot_2.set_title(f"acceleration_y on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+            
+            
             self.plot_histogramme(ax_to_plot_2,df,"imu_acceleration_y",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            vy_acceleration_theo = column_type_extractor(df,"step_frame_vy_theoretical_acceleration")
+            #ax_to_plot_2.hist(vy_acceleration_theo,density=densitybool)
             ax_to_plot_2.set_facecolor(self.color_dict[terrain])
+
+            ## compute centripete acceleration
+            cmd_vyaw= np.mean(column_type_extractor(df,'cmd_body_vel_yaw'),axis=1)
+            cmd_vlin = np.mean(column_type_extractor(df,'cmd_body_vel_x'),axis=1)
+            
+            centripete_acceleration = cmd_vlin * cmd_vyaw
+
+            ax_to_plot_2.hist(centripete_acceleration,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins,color="green")
+
+
+
+            
             #ax_to_plot_2.vlines(np.array([-5,5]),0,ax_to_plot_2.get_ylim()[1],color="red")
             
 
             ax_to_plot_3.set_title(f"acceleration yaw from \n deriv icp on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
             self.plot_histogramme(ax_to_plot_3,df,"step_frame_deriv_vyaw_acceleration",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            
+            vyaw_acceleration = column_type_extractor(df,"step_frame_vyaw_theoretical_acceleration")
+            ax_to_plot_3.hist(vyaw_acceleration,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins)
+
             ax_to_plot_3.set_facecolor(self.color_dict[terrain])
             ax_to_plot_3.vlines(np.array([-4,4]),0,ax_to_plot_3.get_ylim()[1],color="red")
             
             
+            #ax_to_plot_2.vlines(np
+            # 
 
             ax_to_plot_4.set_title(f"acceleration_yaw from \n deriv imu yaw vel {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
             self.plot_histogramme(ax_to_plot_4,df,"imu_deriv_vyaw_acceleration",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
+            vyaw_acceleration = column_type_extractor(df,"step_frame_vyaw_theoretical_acceleration")
+            ax_to_plot_4.hist(vyaw_acceleration,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins)
             ax_to_plot_4.set_facecolor(self.color_dict[terrain])
             ax_to_plot_4.vlines(np.array([-4,4]),0,ax_to_plot_4.get_ylim()[1],color="red")
-            
+
+            if i ==0:
+                ax_to_plot_2.legend(["useless","Centripetal acceleration"])
+                ax_to_plot.legend(["System limits","Measured acceleration","Theoretical acceleration"],
+                                  )
+                
+
+                # Extract legends
+                legend_1 = ax_to_plot.get_legend()
+                legend_2 = ax_to_plot_2.get_legend()
+
+                # Combine handles and labels
+                combined_handles = legend_1.legend_handles + [legend_2.legend_handles[1]]
+                combined_labels = [text.get_text() for text in legend_1.get_texts()] + [legend_2.get_texts()[1].get_text()]
+
+                legend_1.remove()
+                legend_2.remove()
+
+                ax_to_plot.legend(handles=combined_handles ,
+                                labels=combined_labels, 
+                                loc='center',bbox_to_anchor=(3.5, 1.5),ncol=4 )
+
+
+
         if subtitle=="":
             fig.suptitle(f"Acceleration_histogram for all_types_of_terrain",fontsize=14)
         else:
@@ -761,6 +814,7 @@ class GraphicProductionDrive():
             fig3.savefig(path_to_save/("displacement_diamond_"+file_name),format="pdf")
             plt.close('all')
             print("fig3 done")
+
             #fig4 = self.scatter_diamond_displacement_graph_diff(df,subtitle=title)
             #fig4.savefig(path_to_save/("diff_displacement_diamond_"+file_name),format="pdf")
             #plt.close('all')
@@ -775,10 +829,10 @@ class GraphicProductionDrive():
             fig7.savefig(path_to_save/("acceleration_transient_hist"+file_name),format="pdf")
             plt.close('all')
             print("fig7 done")
-            fig8 = self.acceleration_histogram(df,subtitle="all",nb_bins=30,x_lim=(-6,6),densitybool=densitybool,transientflag=False)
-            fig8.savefig(path_to_save/("acceleration_all_hist"+file_name),format="pdf")
-            plt.close('all')
-            print("fig8 done")
+            #fig8 = self.acceleration_histogram(df,subtitle="all",nb_bins=30,x_lim=(-6,6),densitybool=densitybool,transientflag=False)
+            #fig8.savefig(path_to_save/("acceleration_all_hist"+file_name),format="pdf")
+            #plt.close('all')
+            #print("fig8 done")
 
 
     def add_all_labels(self,axs, list_y_label,list_x_labels):
@@ -1089,6 +1143,7 @@ if __name__ == "__main__":
     #plt.show()
     #
     plot_all_warthog_filtered_data()
+    plt.show()
     
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(graphic_designer.df_diamond,diff_referential=True)
 
