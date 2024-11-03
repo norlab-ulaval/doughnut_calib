@@ -56,7 +56,7 @@ def launch_drive_orechestra(context, *args, **kwargs):
         ("left_wheel_current_in","/status"),
         ("left_wheel_voltage_in","/status"),
         ("right_wheel_voltage_in","/status"),
-        ("right_wheel_current_in","/status"),
+        ("right_wheel_current_in","/status"), 
         ('/doughnut_cmd_vel', "/controller/cmd_vel" )
         ],
     namespace="drive"

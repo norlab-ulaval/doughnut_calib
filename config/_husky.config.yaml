@@ -11,19 +11,26 @@
       max_lin_speed: 1.0
       max_ang_speed: 2.0
       step_len: 6.0
-      n_calib_steps: 2
+
+
+
+      n_calib_steps: 100
+      run_by_maestro: True
+      
+      
       dead_man_button: True
       dead_man_index: 5
       dead_man_threshold: 0.7
       calib_trigger_button: True
       calib_trigger_index: 7
       calib_threshold: 0.7
-      record_wheel_current: False
-      record_wheel_voltage: False
+      
+      record_wheel_current: True
+      record_wheel_voltage: True
       type_of_encoder: 'JointState'
       left_wheel_encoder_velocity_index: 1
       right_wheel_encoder_velocity_index: 2
       cmd_msg_twist_stamped: True
       automatic_mode_dead_man_index: 0
       path_to_save_input_space_calib: '/home/robot/ros2_ws/src/DRIVE/calib_data/input_space_calib/husky_input_space_data.pkl'
-      run_by_maestro: True
+      

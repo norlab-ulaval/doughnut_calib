@@ -9,4 +9,5 @@
       left_wheel_encoder_velocity_index: 2
       right_wheel_encoder_velocity_index: 3
       cmd_msg_twist_stamped: True
+      power_message_type: 'HuskyStatus'
       

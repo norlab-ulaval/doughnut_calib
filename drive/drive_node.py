@@ -61,6 +61,7 @@ class DriveNode(Node):
                 ('right_wheel_encoder_velocity_index',2),
                 ('cmd_msg_twist_stamped',False),
                 ('automatic_mode_dead_man_index',4),
+                
             ]
         )
 
@@ -253,7 +254,7 @@ class DriveNode(Node):
         global dead_man
         global dead_man_index
         if self.dead_man_button == False:
-            if np.abs(joy_data.axes[self.dead_man_index]) >= np.abs(self.dead_man_threshold) or not joy_data.buttons[self.calib_trigger_index]  \
+            if np.abs(joy_data.axes[self.dead_man_index]) >= np.abs(self.dead_man_threshold) or not joy_data.buttons[self.automatic_mode_dead_man_index]  \
                     and joy_data.axes[self.calib_trigger_index] == 0 \
                     and joy_data.buttons[self.calib_trigger_index] == 0 :
 
@@ -261,7 +262,8 @@ class DriveNode(Node):
             else:
                 self.dead_man = False
         else:
-            if joy_data.buttons[self.dead_man_index] >= self.dead_man_threshold \
+            # TODO : NS improve the condition to be more explicit 
+            if joy_data.buttons[self.dead_man_index] >= self.dead_man_threshold or not joy_data.buttons[self.automatic_mode_dead_man_index]  \
                     and joy_data.buttons[self.calib_trigger_index] == 0 \
                     and joy_data.buttons[self.calib_trigger_index] == 0:
 

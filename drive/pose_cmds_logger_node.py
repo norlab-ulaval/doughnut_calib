@@ -4,6 +4,8 @@ from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 import threading
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
+
 
 from std_msgs.msg import Float64, Bool, String, Int32
 from geometry_msgs.msg import Twist,TwistStamped
@@ -161,20 +163,25 @@ class LoggerNode(Node):
         self.kill_node_trigger = False
     
         # self.set_parameter('use_sim_time', True)
+        qos_profile = QoSProfile(depth=10)
+        qos_profile.reliability = QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT
+        self.get_logger().info(str(qos_profile.reliability))
+
         if self.record_wheel_current:
-            if self.current_message_type == "HuskyStatus":
+            if self.power_message_type == "HuskyStatus":
                 self.right_wheel_current_listener = self.create_subscription(
                 HuskyStatus,
-                'status',
+                '/status',
                 self.right_wheel_current_callback_husky,
-                10)
+                qos_profile)
 
                 self.left_wheel_current_listener = self.create_subscription(
                 HuskyStatus,
-                'status',
+                '/status',
                 self.left_wheel_current_callback_husky,
-                10)
-            elif self.current_message_type == "Float64":
+                qos_profile)
+            elif self.power_message_type == "Float64":
+                
                 self.right_wheel_current_listener = self.create_subscription(
                 Float64,
                 'right_wheel_current_in',
@@ -188,24 +195,25 @@ class LoggerNode(Node):
                 10)
             
         if self.record_wheel_voltage:
-            if self.current_message_type == "HuskyStatus":
+            if self.power_message_type == "HuskyStatus":
+                
                 self.right_wheel_voltage_listener = self.create_subscription(
                 HuskyStatus,
-                'status',
+                '/status',
                 self.right_wheel_voltage_callback_husky,
-                10)
+                qos_profile)
 
                 self.left_wheel_voltage_listener = self.create_subscription(
                 HuskyStatus,
-                'status',
+                '/status',
                 self.left_wheel_voltage_callback_husky,
-                10)
-            elif self.current_message_type == "Float64":
+                qos_profile)
+            elif self.power_message_type == "Float64":
                 self.right_wheel_voltage_listener = self.create_subscription(
                 Float64,
                 'right_wheel_voltage_in',
                 self.right_wheel_voltage_callback,
-                10)
+                )
                 
                 self.left_wheel_voltage_listener = self.create_subscription(
                 Float64,
@@ -252,16 +260,16 @@ class LoggerNode(Node):
         self.left_wheel_voltage_msg = left_wheel_voltage_data
 
     def right_wheel_current_callback_husky(self, status_data : HuskyStatus):
-        self.right_wheel_current_msg = status_data.right_driver_current
+        self.right_wheel_current_msg = Float64(data=status_data.right_driver_current)
 
     def left_wheel_current_callback_husky(self, status_data : HuskyStatus):
-        self.left_wheel_current_msg = status_data.left_driver_current
+        self.left_wheel_current_msg = Float64(data=status_data.left_driver_current)
     
     def right_wheel_voltage_callback_husky(self, status_data : HuskyStatus):
-        self.right_wheel_voltage_msg = status_data.right_driver_voltage
+        self.right_wheel_voltage_msg = Float64(data=status_data.right_driver_voltage)
 
     def left_wheel_voltage_callback_husky(self, status_data : HuskyStatus):
-        self.left_wheel_voltage_msg = status_data.left_driver_voltage
+        self.left_wheel_voltage_msg = Float64(data=status_data.left_driver_voltage)
 
     
     def switch_callback(self, msg):
@@ -331,7 +339,7 @@ class LoggerNode(Node):
             new_row = np.hstack((new_row,np.array([self.left_wheel_voltage_msg.data,self.right_wheel_voltage_msg.data],dtype=np.float64)))
         if self.record_wheel_current:
             new_row = np.hstack((new_row,np.array([self.left_wheel_current_msg.data,self.right_wheel_current_msg.data],dtype=np.float64)))
-            self.get_logger().info(str(self.right_wheel_current_msg.data))
+            #self.get_logger().info(str(self.right_wheel_current_msg.data))
         self.array = np.vstack((self.array, new_row))
 
 # TODO: Add /mcu/status/stop_engaged listener

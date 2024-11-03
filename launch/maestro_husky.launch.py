@@ -79,10 +79,6 @@ def launch_drive_orechestra(context, *args, **kwargs):
     remappings=[
         ("odometry_in","/mapping/icp_odom"),
         ("imu_in","mti100/data"), # valider l'IMU  # To do
-        ("left_wheel_current_in","/left_drive/status/battery_current_corrected"),
-        ("left_wheel_voltage_in","/left_drive/status/battery_voltage"),
-        ("right_wheel_voltage_in","/right_drive/status/battery_voltage"),
-        ("right_wheel_current_in","/right_drive/status/battery_current_corrected"),
         ('/doughnut_cmd_vel', "/controller/cmd_vel" )
         ],
     namespace="drive"
