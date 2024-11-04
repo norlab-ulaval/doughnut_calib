@@ -6,25 +6,46 @@ from drive.model_training.models.kinematic.ideal_diff_drive import Ideal_diff_dr
 
 def print_column_unique_column(df,verbose=True):
     df_columns = list(df.columns)
+    columns_with_multiple_numbers = []
+    columns_unique = []
     possible_number = ["1","2","3","4","5","6","7","8","9","0"]
     for i,column in enumerate(df_columns):
 
         if column[-1] in possible_number:
-
+            
             if column[-2] in possible_number:
-                df_columns[i] = column[:-3]
-
+                
                 if column[-3] in possible_number:
                     df_columns[i] = column[:-4]
+                    columns_with_multiple_numbers.append(column[:-4])
+                else:
+                    df_columns[i] = column[:-3]
+                    columns_with_multiple_numbers.append(column[:-3])
             else:
                 df_columns[i] = column[:-2]
-        
+                columns_with_multiple_numbers.append(column[:-2])
+
+        else:
+            columns_unique.append(column)
     df_columns_name = pd.Series(df_columns)
     unique_name = df_columns_name.unique()
     unique_name.sort()
     
     if verbose:
-            print(unique_name)
+            
+            print("_"*10+" Unique columns "+"_"*10)
+            unique_column_name = pd.Series(columns_unique)
+            unique_column_name.sort_values()
+            print(unique_column_name.unique())
+            
+            print("_"*34+"\n")
+
+            print("_"*10+"Multiple columns"+"_"*10)
+            unique_column_name = pd.Series(columns_with_multiple_numbers)
+            unique_column_name.sort_values()
+            print(unique_column_name.unique())
+            print("_"*34+"\n")
+            
     return unique_name
 
 
@@ -204,3 +225,23 @@ def reshape_into_6sec_windows(array_to_reshape, n_window=3):
 
     return array_to_reshape
 
+def create_columns_names_from_dict_with_names(list_commun_col,dico,new_dico):
+
+    for col in list_commun_col:
+        data = dico[col]
+        for i in range(data.shape[1]):
+            new_dico[col+f"_{i}"] = data[:,i]
+
+    return new_dico
+
+def extract_df_colummn_into_6_sec_dico(df,commun_type_name):
+
+    array = reshape_into_6sec_windows(column_type_extractor(df,commun_type_name))
+
+    dico = {}
+
+    for i in range(array.shape[1]):
+
+        dico[commun_type_name+f"_{i}"] = array[:,i]
+    
+    return dico

@@ -355,8 +355,8 @@ class SlipDatasetParser:
                 icp_disp_body_2d = icp_next_pose_body_2d - icp_current_pose_body_2d
                 # icp_disp_body_2d[2, 0] = wrap2pi(icp_disp_body_2d[2, 0])
                 icp_vel_body_2d = (icp_disp_body_2d) / self.timestep
-                self.icp_x_single_step_vels_array[i, j] = icp_vel_body_2d[0]
-                self.icp_y_single_step_vels_array[i, j] = icp_vel_body_2d[1]
+                self.icp_x_single_step_vels_array[i, j] = icp_vel_body_2d[0,0]
+                self.icp_y_single_step_vels_array[i, j] = icp_vel_body_2d[1,0]
                 # self.icp_yaw_single_step_vels_array[i, j] = icp_vel_body_2d[2]
             self.icp_x_single_step_vels_array[i, -1] = self.icp_x_single_step_vels_array[i, -2]
             self.icp_y_single_step_vels_array[i, -1] = self.icp_y_single_step_vels_array[i, -2]
@@ -449,7 +449,7 @@ class SlipDatasetParser:
                     name_column_interest+"_time_for_63_percent_ss_value":time_constants_computed + time_delay_computed,
                     name_column_interest+"_time_for_86_percent_ss_value": 2*time_constants_computed + time_delay_computed,
                     name_column_interest+"_time_for_95_percent_ss_value": 3*time_constants_computed + time_delay_computed,
-                    
+                    name_column_interest+"_theoretical_acceleration":np.squeeze(steps_cmd_interest_reshape)/(self.nb_iteration_by_windows * self.timestep)
                     }
         
         column_2_add.update(dico_predictions)
@@ -678,10 +678,10 @@ class SlipDatasetParser:
         
         cmd_body_x = np.zeros_like(cmd_left)
         cmd_body_omega = np.zeros_like(cmd_left)
-
+        
         for i in range(cmd_body_x.shape[0]):
             cmd_vel = np.vstack((cmd_left[i,:],cmd_right[i,:]))
-            body_vel = compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
+            body_vel =  self.ideal_diff_drive.compute_body_vel(cmd_vel) #compute_body_vel_IDD( , robot='warthog-wheel')
             cmd_body_x[i,:] = body_vel[0,:]
             cmd_body_omega[i,:] = body_vel[1,:]
 
@@ -700,7 +700,26 @@ class SlipDatasetParser:
 
         return df
 
+    def compute_yaw_acceleration(self,df,df_slipp):
 
+        yaw_vel = column_type_extractor(df,"step_frame_vyaw_centered")
+        
+        yaw_acceleration = np.diff(yaw_vel,axis=1)/self.timestep
+
+        yaw_vel_imu = reshape_into_6sec_windows(column_type_extractor(df_slipp,"imu_yaw"))
+
+        yaw_imu_deriv = np.diff(yaw_vel_imu,axis=1)/self.timestep
+
+
+        dico_2_add = {}
+        for col in range(yaw_imu_deriv.shape[1]):
+            dico_2_add[f"step_frame_deriv_vyaw_acceleration_{col}"] = yaw_acceleration[:,col]
+            dico_2_add[f"imu_deriv_vyaw_acceleration_{col}"] = yaw_imu_deriv[:,col]
+
+        return dico_2_add
+
+
+        
 
     def create_dataframe_for_diamond_shape_graph(self,terrain,robot,traction,produce_video_now=False,verbose=False):
         
@@ -713,30 +732,37 @@ class SlipDatasetParser:
         cmd_left = np.mean(column_type_extractor(df_last_window, 'cmd_left',verbose=False),axis=1)
         cmd_right = np.mean(column_type_extractor(df_last_window, 'cmd_right',verbose=False),axis=1)
         cmd_vel = np.vstack((cmd_left,cmd_right))
-        body_vel = compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
+        
+        
+        body_vel = self.ideal_diff_drive.compute_body_vel(cmd_vel) # compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
 
         
+        nb_data_to_compute_ss = 10 #self.nb_iteration_by_windows
         
         #                                           Extract x,y,yaw ref state 
         step_frame_vx = reshape_into_6sec_windows(column_type_extractor(df_slip_dataset,"step_frame_vx"))
         step_frame_vy = reshape_into_6sec_windows(column_type_extractor(df_slip_dataset,"step_frame_vy"))
         step_frame_vyaw = reshape_into_6sec_windows(column_type_extractor(df_slip_dataset,"step_frame_vyaw"))
 
-        icp_vel_x = np.mean(step_frame_vx[:,-self.nb_iteration_by_windows:],axis=1)
-        icp_vel_y = np.mean(step_frame_vy[:,-self.nb_iteration_by_windows:],axis=1)
-        icp_vel_yaw = np.mean(step_frame_vyaw[:,-self.nb_iteration_by_windows:],axis=1)
+        icp_vel_x = np.mean(step_frame_vx[:,-nb_data_to_compute_ss:],axis=1)
+        icp_vel_y = np.mean(step_frame_vy[:,-nb_data_to_compute_ss:],axis=1)
+        icp_vel_yaw = np.mean(step_frame_vyaw[:,-nb_data_to_compute_ss:],axis=1)
         body_vel_icp_mean = np.vstack((icp_vel_x,icp_vel_yaw))
 
 
-        body_slip_x = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_x_array)[:,-self.nb_iteration_by_windows:],axis=1)
-        body_stimestelip_yaw = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_yaw_array)[:,-self.nb_iteration_by_windows:],axis=1)
-        body_stimestelip_y = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_y_array)[:,-self.nb_iteration_by_windows:],axis=1)
+        body_slip_x = body_vel[0,:] - icp_vel_x
+        body_stimestelip_yaw = body_vel[1,:] - icp_vel_y
+        body_stimestelip_y = 0 - icp_vel_y
+
+        #body_slip_x = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_x_array)[:,-nb_data_to_compute_ss:],axis=1)#np.mean(reshape_into_6sec_windows(self.body_vel_disturption_x_array)[:,-nb_data_to_compute_ss:],axis=1)
+        #body_stimestelip_yaw = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_yaw_array)[:,-nb_data_to_compute_ss:],axis=1)
+        #body_stimestelip_y = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_y_array)[:,-nb_data_to_compute_ss:],axis=1)
         #raw_icp_vel_x_mean = np.mean(column_type_extractor(df_last_window, 'raw_icp_vel_x',verbose=False),axis=1)
         #raw_icp_vel_yaw_mean = np.mean(column_type_extractor(df_last_window, 'raw_icp_vel_yaw',verbose=False),axis=1)
 
 
-        odom_speed_l = np.mean(column_type_extractor(df_last_window, 'left_wheel_vel',verbose=False),axis=1)
-        odom_speed_right = np.mean(column_type_extractor(df_last_window, 'right_wheel_vel',verbose=False),axis=1)      
+        odom_speed_l = np.mean(reshape_into_6sec_windows(column_type_extractor(df_slip_dataset, 'left_wheel_vel',verbose=False))[:,-nb_data_to_compute_ss:],axis=1)
+        odom_speed_right = np.mean(reshape_into_6sec_windows(column_type_extractor(df_slip_dataset, 'right_wheel_vel',verbose=False))[:,-nb_data_to_compute_ss:],axis=1)      
 
         size = odom_speed_l.shape[0]
         dictionnary_ = {"terrain": [terrain] * size,
@@ -758,6 +784,12 @@ class SlipDatasetParser:
                         "slip_body_y_ss": body_stimestelip_y,
                         "slip_wheel_left_ss": cmd_left-odom_speed_l,
                         "slip_wheel_right_ss": cmd_right-odom_speed_right,
+
+
+                        "slip_rel_body_x_ss": body_slip_x/body_vel[0,:],
+                        "slip_rel_body_yaw_ss": body_stimestelip_yaw/body_vel[1,:],
+                        "slip_rel_wheel_left_ss": cmd_left-odom_speed_l/cmd_left,
+                        "slip_rel_wheel_right_ss": cmd_right-odom_speed_right/cmd_right,
                         }
 
         
@@ -775,18 +807,54 @@ class SlipDatasetParser:
         df = pd.DataFrame.from_dict(dictionnary_)
         ## Compute time and body time constant
         
+        
+
+        
         dico_2_add = self.compute_time_constant_wheel_and_body(df_slip_dataset,self.rate , verbose = False,produce_video_now = produce_video_now)
+        # Adding the steady_state_mask 
+        mask_steady_state = reshape_into_6sec_windows(column_type_extractor(df_slip_dataset,"steady_state_mask"))
+
+        # Recreate the Horizon by 120 sec (3 x40) windows
+        mask_array = np.zeros((mask_steady_state.shape[0] ,mask_steady_state.shape[1] * self.nb_iteration_by_windows))
+        for i in range(mask_steady_state.shape[1]):
+            mask_array[:,i*self.nb_iteration_by_windows:(i+1)*self.nb_iteration_by_windows] = np.array([mask_steady_state[:,i]]*self.nb_iteration_by_windows).T
+
+        for j in range(mask_array.shape[1]):
+            dico_2_add["steady_state_mask"+f"_{j}"] = mask_array[:,j]
+        
+        ## Add acceleration
+        list_col = ["imu_acceleration_x","imu_acceleration_y"] + ["imu_yaw",'cmd_left', 'cmd_right', 'cmd_body_vel_x', 'cmd_body_vel_yaw', 'left_wheel_vel', 'right_wheel_vel', 'step_frame_vx', 'step_frame_vyaw', 'step_frame_vy', 'step_frame_interpolated_icp_x', 'step_frame_interpolated_icp_y', 'step_frame_interpolated_icp_yaw']
+
+        for col in list_col:
+            dico_2_add.update(extract_df_colummn_into_6_sec_dico(df_slip_dataset,col))
+        
+        #cmd_left_wheel: "cmd_left"
+        #cmd_right_wheel: "cmd_right"
+        #cmd_body_lin_vel: "cmd_body_vel_x"
+        #cmd_body_yaw_vel: "cmd_body_vel_yaw"
+        #gt_left_wheel: "left_wheel_vel"
+        #gt_right_wheel: "right_wheel_vel"
+        #gt_body_lin_vel: "step_frame_vx"
+        #gt_body_yaw_vel: "step_frame_vyaw"
+        #gt_body_y_vel: "step_frame_vy"
+        #gt_step_frame_x: "step_frame_interpolated_icp_x"
+        #gt_step_frame_y: "step_frame_interpolated_icp_y"
+        #gt_step_frame_yaw: "step_frame_interpolated_icp_yaw"
+        
+        
         df_temp  = pd.DataFrame.from_dict(dico_2_add)
         
         df_temp = self.compute_max_frame_diff_first_order_param(df_temp)
         
-        df = pd.concat((df,df_temp),axis=1)
+
+        df_acceleration = pd.DataFrame.from_dict(self.compute_yaw_acceleration(df_temp,df_slip_dataset))
+
+        df = pd.concat((df,df_temp,df_acceleration),axis=1)
 
         path = self.path_to_model_training_datasets/"steady_state_results.pkl"
         
         df.to_pickle(str(path))
 
-        
         if verbose ==True:
             print(f"cmd_shape {cmd_vel.shape}")
             print(f"body_vel_icp_mean {body_vel_icp_mean.shape}")

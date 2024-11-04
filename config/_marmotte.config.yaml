@@ -15,3 +15,6 @@ calibration_node:
     calib_trigger_index: 7
     load_input_space_calib_data: False
     path_to_input_space_calib_data: "/home/robot/workspaces/marmotte_ws/src/doughnut_calib/calib_data/marmotte/input_space_data_mw.pkl"
+    wheel_radius: 0.12
+    wheel_baseline: 0.52
+    

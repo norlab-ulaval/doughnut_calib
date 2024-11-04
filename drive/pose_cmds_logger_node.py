@@ -178,7 +178,9 @@ class LoggerNode(Node):
 
     def right_wheel_current_callback(self, right_wheel_current_data):
         self.right_wheel_current_msg = right_wheel_current_data
-
+        #self.get_logger().info(str(self.right_wheel_current_msg.data))
+        #self.get_logger().info(str(self.array.shape))
+        
     def left_wheel_current_callback(self, left_wheel_current_data):
         self.left_wheel_current_msg = left_wheel_current_data
     
@@ -217,6 +219,7 @@ class LoggerNode(Node):
         ## TODO: Find a better way to run the self.log_msgs() function when spinning
 
     def log_msgs(self):
+        #self.get_logger().info("test")
         # Create numpy array with adequate poses
         if (self.pose.pose.pose.position.x != self.prev_icp_x
                 and self.pose.pose.pose.position.y != self.prev_icp_y):
@@ -228,7 +231,8 @@ class LoggerNode(Node):
         ## DEBUG
         # self.get_logger().info(str(self.imu_vel.linear_acceleration.x))
         # self.get_logger().info(str(self.imu_vel.linear_acceleration.y))
-        self.get_logger().info(str(self.get_clock().now().nanoseconds))
+        #self.get_logger().info(str(self.right_wheel_current_msg.data))
+        #self.get_logger().info(str(self.get_clock().now().nanoseconds))
         ## TODO: Fix clock call
         new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data, self.calib_step.data,
                              self.velocity_left_meas.data, self.velocity_right_meas.data,
@@ -238,13 +242,14 @@ class LoggerNode(Node):
                              self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w,
                              self.imu_vel.angular_velocity.x, self.imu_vel.angular_velocity.y,
                              self.imu_vel.angular_velocity.z, self.imu_vel.linear_acceleration.x,
-                             self.imu_vel.linear_acceleration.y, self.imu_vel.linear_acceleration.z]))
-
+                             self.imu_vel.linear_acceleration.y, self.imu_vel.linear_acceleration.z,
+                             ]))
+        
         if self.record_wheel_voltage:
-            new_row = np.hstack((new_row,np.array([self.left_wheel_voltage_msg.data,self.right_wheel_voltage_msg.data])))
+            new_row = np.hstack((new_row,np.array([self.left_wheel_voltage_msg.data,self.right_wheel_voltage_msg.data],dtype=np.float64)))
         if self.record_wheel_current:
-            new_row = np.hstack((new_row,np.array([self.left_wheel_current_msg.data,self.right_wheel_current_msg.data])))
-
+            new_row = np.hstack((new_row,np.array([self.left_wheel_current_msg.data,self.right_wheel_current_msg.data],dtype=np.float64)))
+            self.get_logger().info(str(self.right_wheel_current_msg.data))
         self.array = np.vstack((self.array, new_row))
 
 # TODO: Add /mcu/status/stop_engaged listener
@@ -303,8 +308,10 @@ def main(args=None):
         try:
             while rclpy.ok() and not logger_node.kill_node_trigger:
                 # executor.spin_once()
+                #logger_node.get_logger().info("test")
                 logger_node.rate.sleep()
                 logger_node.log_msgs()
+                
 
         finally:
             # executor.shutdown()

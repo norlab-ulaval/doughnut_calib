@@ -1,0 +1,108 @@
+metric:
+  kinetic_energy:
+    robot:
+      husky:
+        width: 0.6604   #along y
+        length: 0.8382  #along x 
+        wheel_radius: 0.16 # Computed by drive
+        basewidth: 0.55 # Computed by drive
+        masse: 75 # kg
+      warthog:
+        width: 1.52  #along y
+        length: 2.13 #along x 
+        wheel_radius: 0.3 # Computed by drive 
+        basewidth: 1.08 # Computed by drive
+        masse: 497 #kg
+
+  kinetic_energy_wheel_encoder:
+    robot:
+      husky:
+        width: 0.6604   #along y
+        length: 0.8382  #along x 
+        wheel_radius: 0.16 # Computed by drive
+        basewidth: 0.55 # Computed by drive
+        masse: 75 # kg
+      warthog:
+        width: 1.52  #along y
+        length: 2.13 #along x 
+        wheel_radius: 0.3 # Computed by drive 
+        basewidth: 1.08 # Computed by drive
+        masse: 497 #kg
+
+
+  kinetic_energy_wheel_encoder_ratio:
+    robot:
+      husky:
+        width: 0.6604   #along y
+        length: 0.8382  #along x 
+        wheel_radius: 0.16 # Computed by drive
+        basewidth: 0.55 # Computed by drive
+        masse: 75 # kg
+      warthog:
+        width: 1.52  #along y
+        length: 2.13 #along x 
+        wheel_radius: 0.3 # Computed by drive 
+        basewidth: 1.08 # Computed by drive
+        masse: 497 #kg
+
+  DiffSpeedProprioExteroEnergy:
+    robot:
+      husky:
+        width: 0.6604   #along y
+        length: 0.8382  #along x 
+        wheel_radius: 0.16 # Computed by drive
+        basewidth: 0.55 # Computed by drive
+        masse: 75 # kg
+      warthog:
+        width: 1.52  #along y
+        length: 2.13 #along x 
+        wheel_radius: 0.3 # Computed by drive 
+        basewidth: 1.08 # Computed by drive
+        masse: 497 #kg
+motion_model:
+  path_to_motion_model_results: "drive_datasets/results_multiple_terrain_dataframe/metric/motion_model_prediction_error.pkl"
+  ideal_diff_drive:
+    robot:
+      husky:
+        width: 0.6604   #along y
+        length: 0.8382  #along x 
+        wheel_radius: 0.16 # Computed by drive
+        basewidth: 0.55 # Computed by drive
+        masse: 75 # kg
+      warthog:
+        width: 1.52  #along y
+        length: 2.13 #along x 
+        wheel_radius: 0.3 # Computed by drive 
+        basewidth: 1.08 # Computed by drive
+        masse: 497 #kg
+
+
+
+
+datasets:
+  drive_dataset:
+    path_dataset: "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_steady_state_dataset.pkl"
+
+    filter_columns_and_values:
+      robot: "warthog"
+      traction: "wheels"
+      max_linear_speed_sampled: 5.0
+
+    columns_names: # The column prefix that is commun to all the column 0-120 of the same type
+      cmd_left_wheel: "cmd_left"
+      cmd_right_wheel: "cmd_right"
+      cmd_body_lin_vel: "cmd_body_vel_x"
+      cmd_body_yaw_vel: "cmd_body_vel_yaw"
+      gt_left_wheel: "left_wheel_vel"
+      gt_right_wheel: "right_wheel_vel"
+      gt_body_lin_vel: "step_frame_vx"
+      gt_body_yaw_vel: "step_frame_vyaw"
+      gt_body_y_vel: "step_frame_vy"
+      gt_step_frame_x: "step_frame_interpolated_icp_x"
+      gt_step_frame_y: "step_frame_interpolated_icp_y"
+      gt_step_frame_yaw: "step_frame_interpolated_icp_yaw"
+    rate: 20
+    format: "n_cmd x horizon"
+    horizon: 6
+
+    
