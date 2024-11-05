@@ -31,6 +31,7 @@ class Dataset2Evaluate():
         with open(PATH_TO_METRIC, 'r') as file:
             config_file = yaml.safe_load(file)
         
+        
 
         for datasets,datasets_info in config_file["datasets"].items():
 
@@ -78,20 +79,31 @@ class DifficultyMetric():
         with open(PATH_TO_METRIC, 'r') as file:
             metric_param_config = yaml.safe_load(file)
         
+        
 
+        
         for metric,params_metric in metric_param_config["metric"].items():
 
             if metric == metric_name:
-
+                
                 self.metric_parameters = params_metric
         
+
+        path_2_robot = self.metric_parameters["robot_rel_path"]
+        with open(path_2_robot, 'r') as file:
+            robot_param = yaml.safe_load(file)
+            
+
+        self.metric_parameters["robot"] = robot_param["robot"]
+
 
         self.metric_name = metric_name
         
 
         # Read results_file 
         list_possible_metric = ["kinetic_energy","kinetic_energy_wheel_encoder",
-                                "kinetic_energy_wheel_encoder_ratio","DiffSpeedProprioExteroEnergy"]
+                                "kinetic_energy_wheel_encoder_ratio","DiffSpeedProprioExteroEnergy",
+                                "KineticEnergyWheelOnly","KineticEnergyICPOnly"]
         if not PATH_TO_RESULT_FILE.is_file():
             empty_dict  = {}
             for metric in list_possible_metric:
@@ -341,6 +353,71 @@ class KineticEnergyMetricWheelEncoderRatio(KineticEnergyMetricWheelEncoder):
 
         return resulting_energy
     
+class KineticEnergyWheelOnly(KineticEnergyMetricWheelEncoder):
+
+    
+    def __init__(self,metric_name,robot_name) -> None:
+        super().__init__(metric_name,robot_name)
+
+        
+        
+        self.metric_name = "KineticEnergyWheelOnly"
+        self.jacobian = self.wheel_radius *np.array([[1/2, 1/2], [-1/self.basewidth,1/self.basewidth]])
+        # Initiate IDD
+        # Initiate IDD
+    def compute_kinetic_energy_metric(self,dataset):
+        
+        gt_energies = self.compute_energy(dataset["gt_body_lin_vel"],
+                                                dataset["gt_body_y_vel"],
+                                                dataset["gt_body_yaw_vel"])
+        
+        # Computing energy from proprioceptive sensors (wheel encoder)
+        
+        wheel_encoder_energies = self.compute_energy_from_wheel_encoder(dataset["gt_left_wheel"],
+                                                dataset["gt_right_wheel"],dataset["gt_body_y_vel"])
+
+        if dataset["format"] == "n_cmd x horizon":
+            resulting_energy = {}
+            energy_order = ["total_energy_metric","rotationnal_energy_metric","translationnal_energy_metric"]
+            
+            for energy_name, wheel_encoder_energy in zip(energy_order,wheel_encoder_energies):
+
+                kinetic_metric = wheel_encoder_energy
+                
+                resulting_energy[energy_name] = kinetic_metric
+
+        return resulting_energy
+
+class KineticEnergyICPOnly(KineticEnergyMetricWheelEncoder):
+
+    
+    def __init__(self,metric_name,robot_name) -> None:
+        super().__init__(metric_name,robot_name)
+
+        
+        
+        self.metric_name = "KineticEnergyICPOnly"
+        self.jacobian = self.wheel_radius *np.array([[1/2, 1/2], [-1/self.basewidth,1/self.basewidth]])
+        # Initiate IDD
+        # Initiate IDD
+    def compute_kinetic_energy_metric(self,dataset):
+        
+        gt_energies = self.compute_energy(dataset["gt_body_lin_vel"],
+                                                dataset["gt_body_y_vel"],
+                                                dataset["gt_body_yaw_vel"])
+        
+        
+        if dataset["format"] == "n_cmd x horizon":
+            resulting_energy = {}
+            energy_order = ["total_energy_metric","rotationnal_energy_metric","translationnal_energy_metric"]
+            
+            for energy_name, gt_energy in zip(energy_order,gt_energies):
+
+                kinetic_metric = gt_energy
+                
+                resulting_energy[energy_name] = kinetic_metric
+
+        return resulting_energy
 
 class DiffSpeedProprioExteroEnergy(KineticEnergyMetricWheelEncoder):
 
@@ -603,4 +680,13 @@ if __name__ == "__main__":
     graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
     
     
+    dm5 = KineticEnergyICPOnly("KineticEnergyICPOnly","warthog")
+    path_to_result2 = dm5.compute_all_terrain(dataset)
+    graph_metric3 = GraphMetric(dataset,dm5)
+    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    
+    dm6 = KineticEnergyWheelOnly("KineticEnergyWheelOnly","warthog")
+    path_to_result2 = dm6.compute_all_terrain(dataset)
+    graph_metric3 = GraphMetric(dataset,dm6)
+    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
     
