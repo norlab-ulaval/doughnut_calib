@@ -1,80 +1,25 @@
 metric:
   kinetic_energy:
-    robot:
-      husky:
-        width: 0.6604   #along y
-        length: 0.8382  #along x 
-        wheel_radius: 0.16 # Computed by drive
-        basewidth: 0.55 # Computed by drive
-        masse: 75 # kg
-      warthog:
-        width: 1.52  #along y
-        length: 2.13 #along x 
-        wheel_radius: 0.3 # Computed by drive 
-        basewidth: 1.08 # Computed by drive
-        masse: 497 #kg
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
 
   kinetic_energy_wheel_encoder:
-    robot:
-      husky:
-        width: 0.6604   #along y
-        length: 0.8382  #along x 
-        wheel_radius: 0.16 # Computed by drive
-        basewidth: 0.55 # Computed by drive
-        masse: 75 # kg
-      warthog:
-        width: 1.52  #along y
-        length: 2.13 #along x 
-        wheel_radius: 0.3 # Computed by drive 
-        basewidth: 1.08 # Computed by drive
-        masse: 497 #kg
-
+      robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
 
   kinetic_energy_wheel_encoder_ratio:
-    robot:
-      husky:
-        width: 0.6604   #along y
-        length: 0.8382  #along x 
-        wheel_radius: 0.16 # Computed by drive
-        basewidth: 0.55 # Computed by drive
-        masse: 75 # kg
-      warthog:
-        width: 1.52  #along y
-        length: 2.13 #along x 
-        wheel_radius: 0.3 # Computed by drive 
-        basewidth: 1.08 # Computed by drive
-        masse: 497 #kg
-
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+  
   DiffSpeedProprioExteroEnergy:
-    robot:
-      husky:
-        width: 0.6604   #along y
-        length: 0.8382  #along x 
-        wheel_radius: 0.16 # Computed by drive
-        basewidth: 0.55 # Computed by drive
-        masse: 75 # kg
-      warthog:
-        width: 1.52  #along y
-        length: 2.13 #along x 
-        wheel_radius: 0.3 # Computed by drive 
-        basewidth: 1.08 # Computed by drive
-        masse: 497 #kg
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+
+  KineticEnergyWheelOnly:
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+  KineticEnergyICPOnly:
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+
 motion_model:
   path_to_motion_model_results: "drive_datasets/results_multiple_terrain_dataframe/metric/motion_model_prediction_error.pkl"
   ideal_diff_drive:
-    robot:
-      husky:
-        width: 0.6604   #along y
-        length: 0.8382  #along x 
-        wheel_radius: 0.16 # Computed by drive
-        basewidth: 0.55 # Computed by drive
-        masse: 75 # kg
-      warthog:
-        width: 1.52  #along y
-        length: 2.13 #along x 
-        wheel_radius: 0.3 # Computed by drive 
-        basewidth: 1.08 # Computed by drive
-        masse: 497 #kg
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
 
 
 

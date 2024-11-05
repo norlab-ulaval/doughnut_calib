@@ -1,16 +1,16 @@
 #!/bin/bash
-# Check if the correct argument is provided
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 produce_video=true|false"
-    exit 1
-fi
+produce_video="false"
 
+
+
+if [ "$#" -eq 1 ]; then
 # Extract the value of produce_video from the argument
-if [[ $1 == produce_video=* ]]; then
-    produce_video="${1#*=}"  # Get the value after '='
-else
-    echo "Error: Argument must be in the format 'produce_video=true' or 'produce_video=false'."
-    exit 1
+    if [[ $1 == produce_video=* ]]; then
+        produce_video="${1#*=}"  # Get the value after '='
+    else
+        echo "Error: Argument must be in the format 'produce_video=true' or 'produce_video=false'."
+        exit 1
+    fi
 fi
 cd ../../drive/model_training/data_utils || { echo "Directory not found"; exit 1; }
 
@@ -28,6 +28,9 @@ if ! pyenv versions | grep -q "data_analysis"; then
 fi
 
 pyenv activate data_analysis
+pyenv local data
 
-
+pwd
+cd ../..
+pwd
 python3 update_drive_inventory.py --produce_video=$produce_video

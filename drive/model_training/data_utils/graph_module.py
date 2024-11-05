@@ -12,6 +12,7 @@ import matplotlib.animation as animation
 from matplotlib import colormaps as cm
 from drive.model_training.data_utils.extractors import *
 from tqdm import tqdm
+import yaml
 class GraphicProductionDrive():
 
     def __init__(self,path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",result_folder_prefix="",rate=20):
@@ -62,14 +63,19 @@ class GraphicProductionDrive():
         mpl.rcParams['lines.linewidth'] = 1.0
 
         self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose",
-                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white"}
+                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white","avide2":"white"}
 
+        param_path_ = "drive/model_training/data_utils/robot_param.yaml"
+        
+        with open(param_path_ ) as file:
+            self.param_robot = yaml.safe_load(file)["robot"]
+        
 
     def create_window_filter_axis(self):
         increment = 1/(self.n_iteration_by_windows-1)
 
     def add_vehicle_limits_to_wheel_speed_graph(self,ax,first_time =False):
-        max_wheel_speed = 16.6667 # Les roues decluches. rad/s
+        max_wheel_speed = 6.05#16.6667 # Les roues decluches. rad/s
         ax.vlines(np.array([-max_wheel_speed,max_wheel_speed]),ymin=-max_wheel_speed,ymax=max_wheel_speed,color="black")
         ax.hlines(np.array([-max_wheel_speed,max_wheel_speed]),xmin=-max_wheel_speed,xmax=max_wheel_speed,color="black")
         
@@ -85,9 +91,13 @@ class GraphicProductionDrive():
 
         # Erreur est de (-5,0), (-5,0)
         #cmd_max_speed = np.array([[-5,0,5,0,-5],[0,5,0,-5,0]])
-        cmd_max_speed = np.array([[-5,-5,5,5,-5],[-5,5,5,-5,-5]])
-        b = 1.08
-        jac = np.array([[1/2,1/2],[-1/b,1/b]])*0.3
+        
+        v_max_lin = 1.0
+        v_max_angular = 2.0
+        cmd_max_speed = np.array([[-v_max_angular,-v_max_angular,v_max_angular,v_max_angular,-v_max_angular],[-v_max_lin,v_max_lin,v_max_lin,-v_max_lin,-v_max_lin]])
+        b = 0.53 #1.08
+        r = 0.16 #0.3
+        jac = np.array([[1/2,1/2],[-1/b,1/b]])*r
         jac_inv = np.linalg.inv(jac)
         
         cmd_wheel = jac_inv @ cmd_max_speed
@@ -133,9 +143,9 @@ class GraphicProductionDrive():
         
         return ax
     
-    def wheel_graph_info(self,ax):
+    def wheel_graph_info(self,ax,x_lim=6, y_lim = 8.5,max_wheel_speed=16.667):
         
-        max_wheel_speed = 16.6667 # Les roues decluches. rad/s
+        max_wheel_speed = max_wheel_speed # Les roues decluches. rad/s
         
         ax.vlines(np.array([-max_wheel_speed,max_wheel_speed]),ymin=-max_wheel_speed,ymax=max_wheel_speed,color="black",label="vehicle limits")
         ax.hlines(np.array([-max_wheel_speed,max_wheel_speed]),xmin=-max_wheel_speed,xmax=max_wheel_speed,color="black")
@@ -200,7 +210,7 @@ class GraphicProductionDrive():
         return ax, ax.get_legend_handles_labels()[0], ax.get_legend_handles_labels()[1]
 
 
-    def scatter_diamond_displacement_graph(self,df_all_terrain,subtitle=""):
+    def scatter_diamond_displacement_graph(self,df_all_terrain,subtitle="",x_lim=6, y_lim = 8.5,max_wheel_speed=16.667):
         
         list_terrain = df_all_terrain["terrain"].unique()
         size = len(list_terrain)+1
@@ -210,8 +220,8 @@ class GraphicProductionDrive():
         fig.set_figheight(3*3)
         plt.subplots_adjust(wspace=0.5, hspace=0.5)
         alpha_parama= 0.3
-        y_lim = 6
-        x_lim = 8.5
+        y_lim = y_lim *1.15
+        x_lim = x_lim *1.15
 
         for i in range(size):  
             if size == 1:
@@ -222,7 +232,7 @@ class GraphicProductionDrive():
                 ax_to_plot_2 = axs[1,i]
             
             if i == size-1:
-                ax,handle,legend = self.wheel_graph_info(axs[1,i])
+                ax,handle,legend = self.wheel_graph_info(axs[1,i],x_lim=x_lim, y_lim = y_lim,max_wheel_speed=max_wheel_speed)
                 ax_to_plot_2.set_title(f"Graph analyzer helper")
                 self.add_small_turning_radius_background(ax_to_plot,first_time=True)
             else:
@@ -586,7 +596,7 @@ class GraphicProductionDrive():
         ax_to_plot.set_xlim((-xlim,xlim))
         ax_to_plot.set_facecolor(mpl.colors.to_rgba(background_terrain_dict,0.3))
 
-    def plot_diamond_graph_slip_heat_map(self,df_all_terrain,subtitle="",diff_referential= False,global_cmap = True):
+    def plot_diamond_graph_slip_heat_map(self,df_all_terrain,subtitle="",diff_referential= False,global_cmap = True, y_lim= 6, x_lim =8.5):
 
         
         
@@ -600,12 +610,12 @@ class GraphicProductionDrive():
         alpha_parama= 0.3
 
         if diff_referential == False:
-            scale_axes = 1
+            scale_axes = 1.15
         else:
             scale_axes = 2
 
-        y_lim = 6 * scale_axes # m/s
-        x_lim = 8.5 * scale_axes#m/s
+        y_lim = y_lim * scale_axes # m/s
+        x_lim = x_lim* scale_axes#m/s
         cmap = 'viridis' # 
         norm_slip_yaw = mpl.colors.Normalize(0, vmax=df_all_terrain["slip_body_yaw_ss"].max())
 
@@ -687,7 +697,7 @@ class GraphicProductionDrive():
 
         return fig
     
-    def plot_diamond_graph_wheel_slip_heat_map(self,df_all_terrain,diff_referential= False,subtitle="",global_cmap = True):
+    def plot_diamond_graph_wheel_slip_heat_map(self,df_all_terrain,diff_referential= False,subtitle="",global_cmap = True,x_lim=20,y_lim=20):
 
 
         #print_column_unique_column(df_all_terrain)
@@ -700,13 +710,13 @@ class GraphicProductionDrive():
         alpha_parama= 0.3
 
         if diff_referential == False:
-            scale_axes = 1
+            scale_axes = 1.15
         else:
             scale_axes = 2
 
 
-        y_lim = 20  *scale_axes # m/s
-        x_lim = 20 *scale_axes#m/s
+        y_lim = y_lim  *scale_axes # m/s
+        x_lim = x_lim *scale_axes#m/s
         cmap = 'viridis' # 
         norm_slip_yaw = mpl.colors.Normalize(0, vmax=df_all_terrain["slip_body_yaw_ss"].max())
 
@@ -800,6 +810,8 @@ class GraphicProductionDrive():
                 list_df_to_use.append(df_sampling_speed)
                 list_title.append(f"All roboticist with a maximum linear sampling speed of {sampling_lin_speed} m/s")
                 list_file_name.append(f"{fig_prefix}_max_sampling_lin_speed_{sampling_lin_speed}_all.pdf")
+        
+        
         # Produce the graphs 
         for title, df,file_name in tqdm(zip(list_title,list_df_to_use,list_file_name)):
 
@@ -1098,28 +1110,114 @@ class GraphicProductionDrive():
             fig.canvas.mpl_connect('key_press_event', lambda event: self.on_key(event, frame_index,np.ravel(axs),list_data,list_scatter_or_quiver,graph_style,fig,self.step_shape[0]))
             plt.show()
 
+    def produce_slip_histogramme_by_roboticist_by_robot(self,robiticis_specific=True,densitybool=True):
+
+        df_diamond = self.df_diamond
+
+        list_df_to_use = []
+        list_title = [] 
+        list_file_name = []
+
+        list_robot  = []
+
+        fig_prefix= "histogram_slip"
+
+        path_to_save = self.path_to_analysis/"heatmap_slip"/"by_robot"
+
+        if path_to_save.is_dir() == False:
+            path_to_save.mkdir()
+
+        
+        
+        
+
+        for robot in df_diamond["robot"].unique():
+            df_sampling_speed = df_diamond.loc[df_diamond["robot"]==robot]
+            
+            
+            if robiticis_specific:
+                for roboticist in df_sampling_speed["roboticist"].unique():
+                
+                    df_sampling_speed_roboticist = df_sampling_speed.loc[df_sampling_speed["roboticist"] == roboticist]
+                    list_df_to_use.append(df_sampling_speed_roboticist)
+                    list_title.append(f"Roboticist {roboticist} with the robot {robot} m/s")
+                    list_file_name.append(f"{fig_prefix}_robot_{robot}_{roboticist}.pdf")
+                    list_robot.append(robot)
+            else:
+                list_df_to_use.append(df_sampling_speed)
+                list_title.append(f"All roboticist with the {robot} m/s")
+                list_file_name.append(f"{fig_prefix}_robot_{robot}_all_roboticist.pdf")
+                list_robot.append(robot)
+        # Produce the graphs 
+        for title, df,file_name,robot_name in tqdm(zip(list_title,list_df_to_use,list_file_name,list_robot)):
+
+            robot_param = self.param_robot[robot_name]
+
+            fig = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title,
+                                                        y_lim=robot_param["maximum_linear_speed"],
+                                                        x_lim=robot_param["maximum_angular_speed"])
+            fig.savefig(path_to_save/("body_slip_"+file_name),format="pdf")
+            plt.close('all')
+            print("fig1 done")
+
+
+            fig2 = self.plot_diamond_graph_wheel_slip_heat_map(df,subtitle=title,global_cmap = True,
+                                                            y_lim=robot_param["maximum_wheel_speed_empty"],
+                                                            x_lim=robot_param["maximum_wheel_speed_empty"])
+            fig2.savefig(path_to_save/("wheel_slip_"+file_name),format="pdf")
+            plt.close('all')
+            print("fig2 done")
+
+
+            fig3 = self.scatter_diamond_displacement_graph(df,subtitle=title, y_lim=robot_param["maximum_linear_speed"],
+                                                        x_lim=robot_param["maximum_angular_speed"],max_wheel_speed=robot_param["maximum_wheel_speed_empty"])
+            fig3.savefig(path_to_save/("displacement_diamond_"+file_name),format="pdf")
+            plt.close('all')
+            print("fig3 done")
+
+            #fig4 = self.scatter_diamond_displacement_graph_diff(df,subtitle=title)
+            #fig4.savefig(path_to_save/("diff_displacement_diamond_"+file_name),format="pdf")
+            #plt.close('all')
+            #fig5 = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title,diff_referential=True)
+            #fig5.savefig(path_to_save/("diff_frame_body_slip_"+file_name),format="pdf")
+            #plt.close('all')
+            #fig6 = self.plot_diamond_graph_wheel_slip_heat_map(df,subtitle=title,global_cmap = True,diff_referential=True)
+            #fig6.savefig(path_to_save/("diff_frame_wheel_slip_"+file_name),format="pdf")
+            #plt.close('all')
+
+            fig7 = self.acceleration_histogram(df,subtitle="transient",nb_bins=30,x_lim=(-6,6),densitybool=densitybool,transientflag=True)
+            fig7.savefig(path_to_save/("acceleration_transient_hist"+file_name),format="pdf")
+            plt.close('all')
+            print("fig7 done")
+            #fig8 = self.acceleration_histogram(df,subtitle="all",nb_bins=30,x_lim=(-6,6),densitybool=densitybool,transientflag=False)
+            #fig8.savefig(path_to_save/("acceleration_all_hist"+file_name),format="pdf")
+            #plt.close('all')
+            #print("fig8 done")
 
 
 def plot_all_unfiltered_data():
-    path_to_dataframe_slip = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl" 
-    path_to_dataframe_diamond= "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
+    path_to_dataframe_slip = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl" 
+    path_to_dataframe_diamond= "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
     path_to_config_file=""
 
     
-    graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="")
-    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=False)
-    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=True)
     
+    graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="")
+    graphic_designer.produce_slip_histogramme_by_roboticist_by_robot(robiticis_specific=True)
+    graphic_designer.produce_slip_histogramme_by_roboticist_by_robot(robiticis_specific=False)
+
 
 def plot_all_warthog_filtered_data():
+
+    ### TODO add prefiltered_prefix_to_results. 
     path_to_dataframe_slip = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_slip_dataset.pkl"
     path_to_dataframe_diamond= "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_steady_state_dataset.pkl"
 
     path_to_config_file=""
 
     graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",result_folder_prefix="filtered_warthog_results")
-    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=False)
-    graphic_designer.produce_slip_histogramme_by_roboticist_for_a_specific_linear_sampling_speed(robiticis_specific=True)
+    graphic_designer.produce_slip_histogramme_by_roboticist_by_robot(robiticis_specific=False)
+    graphic_designer.produce_slip_histogramme_by_roboticist_by_robot(robiticis_specific=True)
     
 if __name__ == "__main__":
 
@@ -1143,9 +1241,9 @@ if __name__ == "__main__":
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(global_cmap=True)
     #plt.show()
     #
-    plot_all_warthog_filtered_data()
-    plt.show()
-    
+    #plot_all_warthog_filtered_data()
+    #plt.show()
+    plot_all_unfiltered_data()
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(graphic_designer.df_diamond,diff_referential=True)
 
     #fig3 = graphic_designer.scatter_diamond_displacement_graph_diff(graphic_designer.df_diamond,subtitle="")

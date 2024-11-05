@@ -12,7 +12,6 @@ PATH_TO_MODEL_EVALUATION_PARAM  = pathlib.Path('drive/model_training/data_utils/
 
 class ModelPredictionErrorComputer():
 
-
     def __init__(self,motion_model_name,robot_name,dataset) -> None:
             
         # Extract from dataset_relevant information:
@@ -32,9 +31,13 @@ class ModelPredictionErrorComputer():
             if motion_model_name == self.idd_name:
                 
                 motion_model_params = metric_param_config[self.idd_name]
-                
-                if robot_name in list(motion_model_params["robot"].keys()):    
-                    idd_params  = motion_model_params["robot"][robot_name]
+                path_to_robot_param = motion_model_params["robot_rel_path"]
+                with open(path_to_robot_param, 'r') as file:
+                    robot_param = yaml.safe_load(file)
+
+                if robot_name in list(robot_param["robot"].keys()):   
+                    
+                    idd_params  = robot_param["robot"][robot_name]
                     self.motion_model = Ideal_diff_drive(idd_params["wheel_radius"],idd_params["basewidth"],self.dt)
                     
                 else:
