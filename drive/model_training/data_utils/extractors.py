@@ -245,3 +245,26 @@ def extract_df_colummn_into_6_sec_dico(df,commun_type_name):
         dico[commun_type_name+f"_{i}"] = array[:,i]
     
     return dico
+
+def extract_ss_based_on_ratio(df,column,nbr_ts_window=80,number_ss_col=40,nbr_step_by_window = 40,debug=False):
+
+    col_val = column_type_extractor(df,column)
+
+
+    mask = np.array([[False]*nbr_ts_window+[True]*number_ss_col]*col_val.shape[0]) 
+
+    extracted_values = col_val[mask]
+    nbr_elem = extracted_values.shape[0] 
+    shape_0 = nbr_elem//nbr_step_by_window
+    shape_1 = nbr_elem//shape_0
+    
+    extracted_values = extracted_values.reshape((shape_0,shape_1))
+
+    print(extracted_values.shape)
+    if debug:
+        print((col_val>2).shape)
+        print(mask.shape)
+        print(col_val.shape)
+    return extracted_values
+
+    
