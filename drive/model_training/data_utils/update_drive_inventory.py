@@ -15,6 +15,8 @@ from drive.model_training.data_utils.graph_module import   GraphicProductionDriv
 from drive.model_training.model_trainers.powertrain_trainer import Powertrain_Trainer
 from drive.model_training.models.powertrain.bounded_powertrain import Bounded_powertrain
 
+DRIVE_DEFAULT_PATH = pathlib.Path.cwd()
+
 def extract_components_from_names(names):
     names_components = names.split("_")
     
@@ -172,10 +174,10 @@ def append_selection_column(df,metadata_dict,config_file_robot):
     
     return pd.concat((df,added_column),axis=1)
 
-def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_inventory_names = "drive_inventory",length_window_time=2.0,produce_video=False):
+def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_workspace="drive", drive_inventory_names = "drive_inventory",length_window_time=2.0,produce_video=False):
 
     
-    path_to_drive_repo =  pathlib.Path.cwd().parent.parent.parent
+    path_to_drive_repo = drive_workspace
     path_to_drive_datasets_fodler =path_to_drive_repo/"drive_datasets"
     #print(path_to_drive_datasets_fodler)
     path_to_data = path_to_drive_datasets_fodler/"data"
@@ -308,9 +310,15 @@ if __name__=="__main__":
     # Add the boolean argument
     parser.add_argument(
         '--produce_video',
-        type=str,  # Accepts a string value
+        type= bool,
         help='Specify whether to produce a video (true or false; default: false)',
-        default='false'  # Default value as a string
+        default=0
+    )
+    parser.add_argument(
+        "--drive_workspace",
+        type=str,
+        help="Specify the folder where the drive repo is located",
+        default=DRIVE_DEFAULT_PATH
     )
     # Parse the arguments
     args = parser.parse_args()
@@ -321,8 +329,9 @@ if __name__=="__main__":
     else:
         print("Video production is disabled.")
 
+    drive_workspace = args.drive_workspace
 
-    path_to_update_config_file = pathlib.Path.cwd().parent.parent.parent/"drive_datasets"/"scripts"/"config"/"update_config.yaml"
+    path_to_update_config_file = drive_workspace/"drive_datasets"/"scripts"/"config"/"update_config.yaml"
     
     with open(path_to_update_config_file, 'r') as file:
         update_config = yaml.load(file, Loader=yaml.FullLoader)
@@ -331,16 +340,6 @@ if __name__=="__main__":
     result_folder= update_config["result_folder"]
     drive_inventory_names = update_config["drive_inventory_names"]
     
-    if args.produce_video=='true':
-        dico_2_do = update_yaml_file(result_folder=result_folder,drive_inventory_names = drive_inventory_names,produce_video=True)
-        dico_2_do.pop("last_update_time")
-        list_dataframe = list(dico_2_do.values())
-    else:
-        dico_2_do = update_yaml_file(result_folder=result_folder,drive_inventory_names = drive_inventory_names,produce_video=False)
-        dico_2_do.pop("last_update_time")
-        list_dataframe = list(dico_2_do.values())
-    
-
-
-    
-
+    dico_2_do = update_yaml_file(result_folder=result_folder, drive_workspace=drive_workspace, drive_inventory_names = drive_inventory_names, produce_video = args.produce_video)
+    dico_2_do.pop("last_update_time")
+    list_dataframe = list(dico_2_do.values())
