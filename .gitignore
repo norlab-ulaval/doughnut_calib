@@ -212,3 +212,4 @@ AMENT_IGNORE
 
 drive_datasets/results_multiple_terrain_dataframe/*
 drive_datasets/scripts/data_analysis/*
+launch.json
