@@ -12,7 +12,7 @@ def generate_launch_description():
 
     icp_mapper_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
-            os.path.join(include_folder, 'icp_mapper.launch.py')
+            os.path.join(include_folder, 'drive_icp_mapper.launch.py')
         ])
     )
 
