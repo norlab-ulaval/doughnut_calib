@@ -16,6 +16,9 @@ metric:
   KineticEnergyICPOnly:
     robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
 
+  KineticEnergyMetricOnly:
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+
 motion_model:
   path_to_motion_model_results: "drive_datasets/results_multiple_terrain_dataframe/metric/motion_model_prediction_error.pkl"
   ideal_diff_drive:

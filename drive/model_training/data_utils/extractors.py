@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pd
 from drive.model_training.models.kinematic.ideal_diff_drive import Ideal_diff_drive
-
+import matplotlib.pyplot as plt 
 
 
 def print_column_unique_column(df,verbose=True):
@@ -260,11 +260,20 @@ def extract_ss_based_on_ratio(df,column,nbr_ts_window=80,number_ss_col=40,nbr_st
     
     extracted_values = extracted_values.reshape((shape_0,shape_1))
 
-    print(extracted_values.shape)
+    #print(extracted_values.shape)
     if debug:
         print((col_val>2).shape)
         print(mask.shape)
         print(col_val.shape)
     return extracted_values
 
-    
+def histogram(df,column):
+
+    data = np.ravel(column_type_extractor(df,column))
+
+
+    fig, ax = plt.subplots(1,1)
+
+    ax.hist(data)
+    ax.set_ylabel(column)
+

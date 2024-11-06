@@ -129,12 +129,12 @@ def plot_image(ax,X_train,mean_prediction,col,y,terrain,x_2_eval,normalize={"nor
             #filtered_prediction_2d = filtered_prediction.reshape((filtered_shape,filtered_shape))
 
             im = ax.imshow(filtered_prediction,extent=(x_lim[0], x_lim[1], y_lim[0], y_lim[1]), origin='lower', cmap=colormap, vmin=normalizer.vmin, vmax=normalizer.vmax)
-            #scatter = ax.scatter(X_train[:,0],X_train[:,1],c=y,cmap=colormap,edgecolor='black',vmin=normalizer.vmin, vmax=normalizer.vmax)
+            scatter = ax.scatter(X_train[:,0],X_train[:,1],c=y,cmap=colormap,edgecolor='black',vmin=normalizer.vmin, vmax=normalizer.vmax)
             final_shape = int(np.sqrt(mean_prediction.shape[0]))
 
         else:
             im = ax.imshow(mean_prediction.reshape(shape),extent=(x_lim[0], x_lim[1], y_lim[0], y_lim[1]), origin='lower', cmap=colormap, vmin=normalizer.vmin, vmax=normalizer.vmax)
-            #scatter = ax.scatter(X_train[:,0],X_train[:,1],c=y,cmap=colormap,edgecolor='black',vmin=normalizer.vmin, vmax=normalizer.vmax)
+            scatter = ax.scatter(X_train[:,0],X_train[:,1],c=y,cmap=colormap,edgecolor='black',vmin=normalizer.vmin, vmax=normalizer.vmax)
             final_shape = int(np.sqrt(mean_prediction.shape[0]))
 
         
@@ -433,12 +433,12 @@ if __name__=="__main__":
     
     
     to_plot = "mean"
-    #graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_mean")
+    graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_mean")
     to_plot = "std"
     #graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_std")
     to_plot = "mean"
-    graph_of_future_body(path,path_to_geom,to_plot,prefix="mean")
+    #graph_of_future_body(path,path_to_geom,to_plot,prefix="mean")
     to_plot = "std"
-    graph_of_future_body(path,path_to_geom,to_plot,prefix="std") 
+    #graph_of_future_body(path,path_to_geom,to_plot,prefix="std") 
 
     

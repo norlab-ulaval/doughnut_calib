@@ -2,6 +2,7 @@ import pathlib
 import pandas as pd 
 import extractors
 import matplotlib.pyplot as plt
+import numpy as np
 
 df = pd.read_pickle("launch/test.pkl")
 
@@ -21,3 +22,7 @@ right_wheel_voltage_desc = df["right_wheel_voltage"].describe()
 print("Left Wheel Current Description:\n", left_wheel_current_desc)
 print("\nLeft Wheel Voltage Description:\n", left_wheel_voltage_desc)
 print("\nRight Wheel Voltage Description:\n", right_wheel_voltage_desc)
+
+
+print(np.sqrt(5000/500/0.5))
+
