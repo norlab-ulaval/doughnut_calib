@@ -1,3 +1,4 @@
+
 import pathlib 
 import datetime
 import yaml 
@@ -13,8 +14,6 @@ from drive.model_training.data_utils.slip_dataset_parser import SlipDatasetParse
 from drive.model_training.data_utils.graph_module import   GraphicProductionDrive
 from drive.model_training.model_trainers.powertrain_trainer import Powertrain_Trainer
 from drive.model_training.models.powertrain.bounded_powertrain import Bounded_powertrain
-
-DRIVE_DEFAULT_PATH = pathlib.Path.cwd()
 
 def extract_components_from_names(names):
     names_components = names.split("_")
@@ -90,14 +89,7 @@ def compute_dataframe(pathlib_to_model_training_datasets,path_to_drive_repo,leng
     
     if path_to_config.is_file():
         with open(path_to_config, 'r') as file:
-
-            config_file_robot_raw = yaml.load(file, Loader=yaml.FullLoader)
-
-            if "/**" in config_file_robot_raw.keys():
-                config_file_robot = config_file_robot_raw["/**"]["calibration_node"]["ros__parameters"]
-                                        
-            else:
-                config_file_robot = config_file_robot_raw["/drive/calibration_node"]["ros__parameters"]
+            config_file_robot = yaml.load(file, Loader=yaml.FullLoader)["/drive/calibration_node"]["ros__parameters"]
     else:
         raise ValueError(f"You need to add the config_file_used _{robot}.config.yaml for the experiment at the folowing place: \n {path_to_config}")
     
@@ -180,10 +172,10 @@ def append_selection_column(df,metadata_dict,config_file_robot):
     
     return pd.concat((df,added_column),axis=1)
 
-def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_workspace="drive", drive_inventory_names = "drive_inventory",length_window_time=2.0,produce_video=False):
+def update_yaml_file(result_folder="results_multiple_terrain_dataframe",drive_inventory_names = "drive_inventory",length_window_time=2.0,produce_video=False):
 
     
-    path_to_drive_repo = drive_workspace
+    path_to_drive_repo =  pathlib.Path.cwd().parent.parent.parent
     path_to_drive_datasets_fodler =path_to_drive_repo/"drive_datasets"
     #print(path_to_drive_datasets_fodler)
     path_to_data = path_to_drive_datasets_fodler/"data"
@@ -212,7 +204,6 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
             
             print("\n"*5, "robot is marmotte")
             continue
-
         else:
             for traction in robot.iterdir():
                 if robot == traction:
@@ -235,14 +226,7 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
                                 
                                 path_2_config_file_robot_drive = experiment/"config_file_used"/("_"+robot.parts[-1]+".config.yaml")
                                 with open(path_2_config_file_robot_drive, 'r') as file:
-
-                                    config_file_robot_raw = yaml.load(file, Loader=yaml.FullLoader)
-                                    
-                                    if "/**" in config_file_robot_raw.keys():
-                                        config_file_robot = config_file_robot_raw["/**"]["calibration_node"]["ros__parameters"]
-                                        
-                                    else:
-                                        config_file_robot = config_file_robot_raw["/drive/calibration_node"]["ros__parameters"]
+                                    config_file_robot = yaml.load(file, Loader=yaml.FullLoader)["/drive/calibration_node"]["ros__parameters"]
 
                                     path_2_metadata_file = experiment/"metadata.yaml"
                                     with open(path_2_metadata_file, 'r') as metadata_file:
@@ -324,15 +308,9 @@ if __name__=="__main__":
     # Add the boolean argument
     parser.add_argument(
         '--produce_video',
-        type= bool,
+        type=str,  # Accepts a string value
         help='Specify whether to produce a video (true or false; default: false)',
-        default=0
-    )
-    parser.add_argument(
-        "--drive_workspace",
-        type=str,
-        help="Specify the folder where the drive repo is located",
-        default=DRIVE_DEFAULT_PATH
+        default='false'  # Default value as a string
     )
     # Parse the arguments
     args = parser.parse_args()
@@ -343,9 +321,8 @@ if __name__=="__main__":
     else:
         print("Video production is disabled.")
 
-    drive_workspace = args.drive_workspace
 
-    path_to_update_config_file = drive_workspace/"drive_datasets"/"scripts"/"config"/"update_config.yaml"
+    path_to_update_config_file = pathlib.Path.cwd().parent.parent.parent/"drive_datasets"/"scripts"/"config"/"update_config.yaml"
     
     with open(path_to_update_config_file, 'r') as file:
         update_config = yaml.load(file, Loader=yaml.FullLoader)
@@ -354,6 +331,16 @@ if __name__=="__main__":
     result_folder= update_config["result_folder"]
     drive_inventory_names = update_config["drive_inventory_names"]
     
-    dico_2_do = update_yaml_file(result_folder=result_folder, drive_workspace=drive_workspace, drive_inventory_names = drive_inventory_names, produce_video = args.produce_video)
-    dico_2_do.pop("last_update_time")
-    list_dataframe = list(dico_2_do.values())
+    if args.produce_video=='true':
+        dico_2_do = update_yaml_file(result_folder=result_folder,drive_inventory_names = drive_inventory_names,produce_video=True)
+        dico_2_do.pop("last_update_time")
+        list_dataframe = list(dico_2_do.values())
+    else:
+        dico_2_do = update_yaml_file(result_folder=result_folder,drive_inventory_names = drive_inventory_names,produce_video=False)
+        dico_2_do.pop("last_update_time")
+        list_dataframe = list(dico_2_do.values())
+    
+
+
+    
+
