@@ -6,6 +6,12 @@ from extractors import *
 import matplotlib.pyplot as plt
 import pathlib
 import pickle 
+import argparse
+
+DATASET_PATH = "./drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
+ROBOT = "warthog"
+MAX_LIN_SPEED = "all_speed"
+DEBUG = False
 
 def scatter_diamond_displacement_graph(df_all_terrain,list_shape,subtitle=""):
         
@@ -253,13 +259,13 @@ def reverse_engineer_clearpath_max_speed(df,debug=False):
 
         pt = Point(cmd[i,:])
 
-        if shapely.within(pt, rectangle):
-            filter.append(True)
-        else:
-            filter.append(False)
+        filter.append(shapely.within(pt, rectangle))
+        #if shapely.within(pt, rectangle):
+        #    filter.append(True)
+        #else:
+        #    filter.append(False)
     
-    
-    df["is_within_software_limits"] = filter
+    #df["is_within_software_limits"] = filter
     
     new_df = df.loc[filter]    
 
@@ -494,20 +500,21 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df):
     with open(path_to_save, 'wb') as file:
         pickle.dump(df_geom, file)
 
-
-
-        
-
-
-
     
 if __name__=="__main__":
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--path",type=str,default=DATASET_PATH)
+    argparser.add_argument("--robot",type=str,default=ROBOT)
+    argparser.add_argument("--max_lin_speed",type=str,default=MAX_LIN_SPEED)
+    argparser.add_argument("--debug",type=bool,default=DEBUG)
     
-    path = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    filter_all_results_clearpath(path,"warthog","all_speed",debug=False)
+    args = argparser.parse_args()
+    path = args.path
+    robot = args.robot
+    max_lin_speed = args.max_lin_speed
+    debug = args.debug
+
+    filter_all_results_clearpath(path,robot,max_lin_speed,debug=debug)
     
-
-    #
-
     
 

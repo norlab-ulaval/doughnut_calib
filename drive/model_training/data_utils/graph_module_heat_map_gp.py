@@ -8,6 +8,10 @@ import matplotlib.cm as cm
 import pickle 
 import shapely
 import pathlib
+import argparse
+
+DATASET_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
+GEOM_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
 
 def filtered_mesgrid_cmd_based_on_geom(geom_by_terrain,terrain,x_mesh,y_mesh ):
 
@@ -89,6 +93,8 @@ def find_the_surface(df,col_interest,terrain,geom_to_filter ={},ax=None,debug=Fa
                     colormap=colormap,x_lim=x_lim,y_lim=y_lim)
 
     return im
+
+
 def graph_scatter_valid(vx,vyaw,X,y):
     r = 12
     theta = np.linspace(0,2*np.pi,101)
@@ -174,8 +180,6 @@ def plot_image(ax,X_train,mean_prediction,col,y,terrain,x_2_eval,normalize={"nor
 
 
 def create_figure_all_slip():
-
-
     fig, ax = plt.subplots(1,1,figsize=(8, 6))
 
 def extract_percentiles(data):
@@ -198,8 +202,6 @@ def extract_percentiles(data):
     return p2_5, p97_5
 
 def plot_losange_limits(ax,geom):
-
-
     x,y = geom.exterior.xy
     ax.plot(x,y,color="black")
 
@@ -428,9 +430,13 @@ def graph_of_future_wheel(path,path_to_geom,to_plot="mean",prefix="wheel_mean"):
     plt.show()
 
 if __name__=="__main__":
-    path = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl")
-    path_to_geom = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl")
-    
+    # Arg parser for the pickle file
+    parser = argparse.ArgumentParser(description="Process some arguments.")
+    parser.add_argument("--dataset",type=str,help="Path to the pickle file", default=DATASET_PICKLE)
+    parser.add_argument("--geom",type=str,help="Path to the pickle file containing the geom", default=GEOM_PICKLE)
+
+    path = pathlib.Path(parser.parse_args().dataset)
+    path_to_geom = pathlib.Path(parser.parse_args().geom)
     
     to_plot = "mean"
     #graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_mean")

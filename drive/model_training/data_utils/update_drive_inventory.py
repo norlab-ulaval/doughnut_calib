@@ -1,4 +1,3 @@
-
 import pathlib 
 import datetime
 import yaml 
@@ -26,8 +25,7 @@ def extract_components_from_names(names):
     return robot,traction,terrain
 
 def trained_powertrain_model(df,path_to_save_training_results_with_x_steps,max_wheel_vel,min_wheel_vel,path_to_powertrain_config,rate,training_horizon):
-
-    
+  
     ####### Load param of the calibration node
     with open(path_to_powertrain_config, 'r') as file:
         motion_model_trainer_config = yaml.safe_load(file)
