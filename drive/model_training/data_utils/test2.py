@@ -51,3 +51,7 @@ if __name__ == "__main__":
     plt.title('Filling Space Between Two Polygons')
     plt.grid()
     plt.show()
+
+test = []
+test.extend([10]*10)
+print(test)

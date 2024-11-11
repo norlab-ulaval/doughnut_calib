@@ -35,7 +35,7 @@ def launch_drive_orechestra(context, *args, **kwargs):
     name="logger_node",
     output='screen',
     parameters=[config_file_logger],
-    remappings=[
+    remappings=[                    
         ("wheel_vel_left_measured", "/left_drive/status/speed"),
         ("wheel_vel_right_measured","/right_drive/status/speed"),
         ("odometry_in","/mapping/icp_odom"),

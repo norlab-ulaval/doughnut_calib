@@ -103,7 +103,7 @@ class DifficultyMetric():
         # Read results_file 
         list_possible_metric = ["kinetic_energy","kinetic_energy_wheel_encoder",
                                 "kinetic_energy_wheel_encoder_ratio","DiffSpeedProprioExteroEnergy",
-                                "KineticEnergyWheelOnly","KineticEnergyICPOnly"]
+                                "KineticEnergyWheelOnly","KineticEnergyICPOnly","KineticEnergyMetricOnly"]
         if not PATH_TO_RESULT_FILE.is_file():
             empty_dict  = {}
             for metric in list_possible_metric:
@@ -135,7 +135,7 @@ class KineticEnergyMetric(DifficultyMetric):
         self.metric_name = "kinetic_energy"
 
         
-        
+        print(self.inertia_constraints )
     def compute_energy(self,vx,vy,omega_body):
         """_summary_
 
@@ -145,8 +145,8 @@ class KineticEnergyMetric(DifficultyMetric):
             omega_body (_type_): assuming that the vector is N by 1
         """
 
-        translation_energy = 1/2 * (vx**2+vy**2)
-        rotationnal_energy = 1/2 * (self.inertia_constraints * omega_body**2)
+        translation_energy = 1/2 * self.masse * (vx**2+vy**2) 
+        rotationnal_energy = 1/2 * self.masse * (self.inertia_constraints * omega_body**2)
         state_kin_energy =  translation_energy + rotationnal_energy
 
         
@@ -650,6 +650,39 @@ class GraphMetric():
 
 
 
+class KineticEnergyMetricOnly(KineticEnergyMetricWheelEncoder):
+
+    def __init__(self,metric_name,robot_name) -> None:
+        super().__init__(metric_name,robot_name)
+
+        self.metric_name = "KineticEnergyMetricOnly"
+
+        
+
+    def compute_kinetic_energy_metric(self,dataset):
+
+        gt_energies = self.compute_energy(dataset["gt_body_lin_vel"],
+                                                dataset["gt_body_y_vel"],
+                                                dataset["gt_body_yaw_vel"])
+        
+        # Assuming instant acceleration
+        y_cmd =np.zeros(dataset["gt_body_lin_vel"].shape)
+        idd_energies = self.compute_energy(dataset["cmd_body_lin_vel"],
+                                                y_cmd,
+                                                dataset["cmd_body_yaw_vel"])
+
+        if dataset["format"] == "n_cmd x horizon":
+            resulting_energy = {}
+            energy_order = ["total_energy_metric","rotationnal_energy_metric","translationnal_energy_metric"]
+            
+            for energy_name, idd_energy in zip(energy_order,idd_energies):
+
+                kinetic_metric = idd_energy    
+                
+                
+                resulting_energy[energy_name] = kinetic_metric
+
+        return resulting_energy
 
 if __name__ == "__main__":
 
@@ -689,4 +722,13 @@ if __name__ == "__main__":
     path_to_result2 = dm6.compute_all_terrain(dataset)
     graph_metric3 = GraphMetric(dataset,dm6)
     graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    
+
+    print("start")
+    dm7 = KineticEnergyMetricOnly("KineticEnergyMetricOnly","warthog")
+    path_to_result2 = dm7.compute_all_terrain(dataset)
+    print("start")
+    graph_metric3 = GraphMetric(dataset,dm7)
+    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    
     

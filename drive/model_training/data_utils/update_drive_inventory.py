@@ -89,7 +89,14 @@ def compute_dataframe(pathlib_to_model_training_datasets,path_to_drive_repo,leng
     
     if path_to_config.is_file():
         with open(path_to_config, 'r') as file:
-            config_file_robot = yaml.load(file, Loader=yaml.FullLoader)["/drive/calibration_node"]["ros__parameters"]
+
+            config_file_robot_raw = yaml.load(file, Loader=yaml.FullLoader)
+
+            if "/**" in config_file_robot_raw.keys():
+                config_file_robot = config_file_robot_raw["/**"]["calibration_node"]["ros__parameters"]
+                                        
+            else:
+                config_file_robot = config_file_robot_raw["/drive/calibration_node"]["ros__parameters"]
     else:
         raise ValueError(f"You need to add the config_file_used _{robot}.config.yaml for the experiment at the folowing place: \n {path_to_config}")
     
@@ -204,6 +211,7 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
             
             print("\n"*5, "robot is marmotte")
             continue
+
         else:
             for traction in robot.iterdir():
                 if robot == traction:
@@ -226,7 +234,14 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
                                 
                                 path_2_config_file_robot_drive = experiment/"config_file_used"/("_"+robot.parts[-1]+".config.yaml")
                                 with open(path_2_config_file_robot_drive, 'r') as file:
-                                    config_file_robot = yaml.load(file, Loader=yaml.FullLoader)["/drive/calibration_node"]["ros__parameters"]
+
+                                    config_file_robot_raw = yaml.load(file, Loader=yaml.FullLoader)
+                                    
+                                    if "/**" in config_file_robot_raw.keys():
+                                        config_file_robot = config_file_robot_raw["/**"]["calibration_node"]["ros__parameters"]
+                                        
+                                    else:
+                                        config_file_robot = config_file_robot_raw["/drive/calibration_node"]["ros__parameters"]
 
                                     path_2_metadata_file = experiment/"metadata.yaml"
                                     with open(path_2_metadata_file, 'r') as metadata_file:

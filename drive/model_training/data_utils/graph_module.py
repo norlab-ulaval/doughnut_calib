@@ -63,7 +63,7 @@ class GraphicProductionDrive():
         mpl.rcParams['lines.linewidth'] = 1.0
 
         self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose",
-                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white","avide2":"white"}
+                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white","avide2":"white","wetgrass":"honeydew"}
 
         param_path_ = "drive/model_training/data_utils/robot_param.yaml"
         

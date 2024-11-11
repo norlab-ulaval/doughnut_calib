@@ -12,7 +12,7 @@ if [ "$#" -eq 1 ]; then
         exit 1
     fi
 fi
-cd ../../drive/model_training/data_utils || { echo "Directory not found"; exit 1; }
+cd ../.. #drive/model_training/data_utils || { echo "Directory not found"; exit 1; }
 
 
 # Activate the Pyenv environment named 'data_analysis'
@@ -28,9 +28,10 @@ if ! pyenv versions | grep -q "data_analysis"; then
 fi
 
 pyenv activate data_analysis
-pyenv local data
+pyenv local data_analysis
 
 pwd
-cd ../..
-pwd
-python3 update_drive_inventory.py --produce_video=$produce_video
+cd ../../..
+pwd 
+
+python3 drive/model_training/data_utils/update_drive_inventory.py --produce_video=$produce_video
