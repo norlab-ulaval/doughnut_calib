@@ -3,8 +3,48 @@
 # kill leftover screens from previous bag
 killall screen
 
-# launch a record in a screen?
-# screen -dmS record ros2 bag record -a -o /home/william/data/DRIVE/ice/bag2
+# Check if a path argument is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <path_to_rosbag>"
+    exit 1
+fi
+
+# Define the path to the rosbag and the result folder
+INPUT_FOLDER="$1"
+echo $INPUT_FOLDER
+
+BASENAME="${INPUT_FOLDER:43:-16}"  # Get the base name without extension
+echo $BASENAME
+
+ROSBAG_PATH="$INPUT_FOLDER/${BASENAME}_to_remap"
+echo $ROSBAG_PATH
+
+RESULT_FOLDER="$INPUT_FOLDER/models_training_datasets"
+echo $RESULT_FOLDER
+
+MAP_FILE="$INPUT_FOLDER/map.vtk"
+echo $MAP_FILE
+
+mkdir -p "$RESULT_FOLDER"
+
+PKL_FILE="$RESULT_FOLDER/raw_dataframe.pkl"
+echo $PKL_FILE
+
+# Define the file path where the YAML content will be saved
+config_file="/home/william/workspaces/drive_ws/src/norlab_robot/config/_drive_icp_mapper.yaml"
+
+# Write the content to the file
+cat <<EOL > "$config_file"
+/**:
+  icp_mapper:
+    ros__parameters:
+      robot_frame: "base_link"
+      odom_frame: "odom"
+      map_tf_publish_rate: 100.0
+      initial_map_file_name: "$MAP_FILE"
+      is_mapping: false
+      use_sim_time: true
+EOL
 
 # launch the logger in a screen
 screen -dmS drive_logger ros2 launch drive offline_logger_warthog.launch.py
@@ -13,8 +53,8 @@ screen -dmS drive_logger ros2 launch drive offline_logger_warthog.launch.py
 screen -dmS mapping ros2 launch drive offline_mapping.launch.py
 
 # Play the rosbag in the current terminal so we can pipe the service call after it.
-ros2 bag play -r 0.05 /media/william/6757-F443/NIC/asphalt/rosbags/rosbag2_2024_09_20-08_22_47_without_mapping/rosbag2_2024_09_20-08_22_47_to_remap --clock
+ros2 bag play -r 1 "$ROSBAG_PATH" --clock
 
 # call the service to save the logger data
 ros2 service call /drive/export_data norlab_controllers_msgs/srv/ExportData "export_path:
-       data: '/media/william/6757-F443/NIC/asphalt/rosbags/rosbag2_2024_09_20-08_22_47_without_mapping/models_training_datasets/raw_dataframe.pkl'"
+       data: '"$PKL_FILE"'"
