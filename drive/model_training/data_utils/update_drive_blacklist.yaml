@@ -1,0 +1,8 @@
+terrain_to_skip:
+  - wetgrass
+  - gravel
+  - grass
+  - sand
+robot_to_skip:
+  - husky
+  - marmotte

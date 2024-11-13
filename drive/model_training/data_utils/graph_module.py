@@ -13,6 +13,8 @@ from matplotlib import colormaps as cm
 from extractors import *
 from tqdm import tqdm
 import yaml
+
+
 class GraphicProductionDrive():
 
     def __init__(self,path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="",result_folder_prefix="",rate=20):
@@ -74,8 +76,9 @@ class GraphicProductionDrive():
     def create_window_filter_axis(self):
         increment = 1/(self.n_iteration_by_windows-1)
 
-    def add_vehicle_limits_to_wheel_speed_graph(self,ax,first_time =False):
-        max_wheel_speed = 6.05#16.6667 # Les roues decluches. rad/s
+    def add_vehicle_limits_to_wheel_speed_graph(self,ax,first_time =False,robot=[1.08,0.3,5,5,16.6667]):
+        # Les roues decluches. rad/s
+        max_wheel_speed = robot[4]
         ax.vlines(np.array([-max_wheel_speed,max_wheel_speed]),ymin=-max_wheel_speed,ymax=max_wheel_speed,color="black")
         ax.hlines(np.array([-max_wheel_speed,max_wheel_speed]),xmin=-max_wheel_speed,xmax=max_wheel_speed,color="black")
         
@@ -92,11 +95,11 @@ class GraphicProductionDrive():
         # Erreur est de (-5,0), (-5,0)
         #cmd_max_speed = np.array([[-5,0,5,0,-5],[0,5,0,-5,0]])
         
-        v_max_lin = 1.0
-        v_max_angular = 2.0
-        cmd_max_speed = np.array([[-v_max_angular,-v_max_angular,v_max_angular,v_max_angular,-v_max_angular],[-v_max_lin,v_max_lin,v_max_lin,-v_max_lin,-v_max_lin]])
-        b = 0.53 #1.08
-        r = 0.16 #0.3
+        v_max_lin = robot[2]
+        v_max_angular = robot[3]
+        cmd_max_speed = np.array([[-v_max_lin,v_max_lin,v_max_lin,-v_max_lin,-v_max_lin],[-v_max_angular,-v_max_angular,v_max_angular,v_max_angular,-v_max_angular]])
+        b = robot[0] #1.08
+        r = robot[1] #0.3
         jac = np.array([[1/2,1/2],[-1/b,1/b]])*r
         jac_inv = np.linalg.inv(jac)
         
@@ -107,10 +110,20 @@ class GraphicProductionDrive():
         
         return ax
     
-    def add_small_turning_radius_background(self,ax,first_time =False):
-        max_wheel_speed = 16.6667 # Les roues decluches. rad/s
-        b = 1.08
-        r =0.3 
+    def add_small_turning_radius_background(self,ax,first_time =False,robot=[1.08,0.3,5,5,16.6667]):
+        """Modify the body frame velocit graph
+
+        Args:
+            ax (_type_): _description_
+            first_time (bool, optional): _description_. Defaults to False.
+            robot (list, optional): _description_. Defaults to [1.08,0.3,5,5,16.6667].
+
+        Returns:
+            _type_: _description_
+        """
+        max_wheel_speed = robot[4] # Les roues decluches. rad/s
+        b = robot[0]
+        r =robot[1]
 
         jacob = np.array([[1/2,1/2],[-1/b, 1/b]]) * r
         n_points=11
@@ -124,7 +137,9 @@ class GraphicProductionDrive():
         cmd_max_speed_wheel = np.array([[-max_wheel_speed,-max_wheel_speed,max_wheel_speed,max_wheel_speed,-max_wheel_speed],
                                   [-max_wheel_speed,max_wheel_speed,max_wheel_speed,-max_wheel_speed,-max_wheel_speed]])
         cmd_max_speed = jacob @ cmd_max_speed_wheel
-        max_body_slip  = np.array([(-5,-5), (-5, 5), (5, 5), (5, -5),(-5,-5)]).T  # A square
+        max_speed_lin = robot[2]
+        max_speed_ang = robot[3]
+        max_body_slip  = np.array([(-max_speed_lin,-max_speed_ang), (-max_speed_lin, max_speed_ang), (max_speed_lin, max_speed_ang), (max_speed_lin, -max_speed_ang),(-max_speed_lin,-max_speed_ang)]).T  # A square
 
 
         if first_time:
@@ -210,7 +225,7 @@ class GraphicProductionDrive():
         return ax, ax.get_legend_handles_labels()[0], ax.get_legend_handles_labels()[1]
 
 
-    def scatter_diamond_displacement_graph(self,df_all_terrain,subtitle="",x_lim=6, y_lim = 8.5,max_wheel_speed=16.667):
+    def scatter_diamond_displacement_graph(self,df_all_terrain,subtitle="",x_lim=6, y_lim = 8.5,max_wheel_speed=16.667,robot=[1.08,0.3,5,5,16.6667]):
         
         list_terrain = df_all_terrain["terrain"].unique()
         size = len(list_terrain)+1
@@ -232,9 +247,9 @@ class GraphicProductionDrive():
                 ax_to_plot_2 = axs[1,i]
             
             if i == size-1:
-                ax,handle,legend = self.wheel_graph_info(axs[1,i],x_lim=x_lim, y_lim = y_lim,max_wheel_speed=max_wheel_speed)
+                ax,handle,legend = self.wheel_graph_info(axs[1,i],x_lim=x_lim, y_lim = y_lim,max_wheel_speed=robot[4])
                 ax_to_plot_2.set_title(f"Graph analyzer helper")
-                self.add_small_turning_radius_background(ax_to_plot,first_time=True)
+                self.add_small_turning_radius_background(ax_to_plot,first_time=True,robot=robot)
             else:
                 terrain = list_terrain[i]
                 df = df_all_terrain.loc[df_all_terrain["terrain"]==terrain]   
@@ -250,7 +265,7 @@ class GraphicProductionDrive():
                 ax_to_plot_2.set_title(f"Wheels vel on {terrain}")
 
 
-                self.add_small_turning_radius_background(ax_to_plot)
+                self.add_small_turning_radius_background(ax_to_plot,robot=robot)
                 ax_to_plot_2.set_facecolor(self.color_dict[terrain])
 
             ax_to_plot.set_xlabel("Angular velocity (omega) [rad/s]")
@@ -262,7 +277,7 @@ class GraphicProductionDrive():
             ax_to_plot_2.set_ylabel("left_wheel speed [rad/s]")
             ax_to_plot_2.set_xlabel("right wheel speed [rad/s]")
 
-            wheels_value = 20
+            wheels_value = max_wheel_speed *1.25
             ax_to_plot_2.set_ylim((-wheels_value,wheels_value))
             ax_to_plot_2.set_xlim((-wheels_value,wheels_value))
             ax_to_plot_2.set_aspect(1)
@@ -272,9 +287,9 @@ class GraphicProductionDrive():
                 
                 handles = ax_to_plot.get_legend_handles_labels()[0] + ax_to_plot_2.get_legend_handles_labels()[0] 
                 legends = ax_to_plot.get_legend_handles_labels()[1] + ax_to_plot_2.get_legend_handles_labels()[1] 
-                ax_to_plot_2 = self.add_vehicle_limits_to_wheel_speed_graph(ax_to_plot_2,first_time=True)
+                ax_to_plot_2 = self.add_vehicle_limits_to_wheel_speed_graph(ax_to_plot_2,first_time=True,robot=robot)
             else:
-                ax_to_plot_2 = self.add_vehicle_limits_to_wheel_speed_graph(ax_to_plot_2)
+                ax_to_plot_2 = self.add_vehicle_limits_to_wheel_speed_graph(ax_to_plot_2,robot=robot)
                 
         fig.legend(handles+handle,legends+legend, loc='center', bbox_to_anchor=(0.5, 0.45), ncol=3)
 
@@ -802,6 +817,7 @@ class GraphicProductionDrive():
             if robiticis_specific:
                 for roboticist in df_sampling_speed["roboticist"].unique():
                 
+                
                     df_sampling_speed_roboticist = df_sampling_speed.loc[df_sampling_speed["roboticist"] == roboticist]
                     list_df_to_use.append(df_sampling_speed_roboticist)
                     list_title.append(f"Roboticist {roboticist} with a maximum linear sampling speed of {sampling_lin_speed} m/s")
@@ -813,7 +829,7 @@ class GraphicProductionDrive():
         
         
         # Produce the graphs 
-        for title, df,file_name in tqdm(zip(list_title,list_df_to_use,list_file_name)):
+        for title, df,file_name in tqdm(zip(list_title,list_df_to_use,list_file_name),colour="green"):
 
             fig = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title)
             fig.savefig(path_to_save/("body_slip_"+file_name),format="pdf")
@@ -1128,13 +1144,12 @@ class GraphicProductionDrive():
             path_to_save.mkdir()
 
         
-        
-        
 
         for robot in df_diamond["robot"].unique():
             df_sampling_speed = df_diamond.loc[df_diamond["robot"]==robot]
             
             
+
             if robiticis_specific:
                 for roboticist in df_sampling_speed["roboticist"].unique():
                 
@@ -1149,10 +1164,16 @@ class GraphicProductionDrive():
                 list_file_name.append(f"{fig_prefix}_robot_{robot}_all_roboticist.pdf")
                 list_robot.append(robot)
         # Produce the graphs 
-        for title, df,file_name,robot_name in tqdm(zip(list_title,list_df_to_use,list_file_name,list_robot)):
+        for title, df,file_name,robot_name in tqdm(zip(list_title,list_df_to_use,list_file_name,list_robot),colour="green"):
 
-            robot_param = self.param_robot[robot_name]
+            
 
+            robot_param= self.param_robot[robot_name]
+
+            robot_param_list = [robot_param["basewidth"],robot_param["wheel_radius"],
+                        robot_param["maximum_linear_speed"],robot_param["maximum_angular_speed"],
+                        robot_param["maximum_wheel_speed_empty"]]
+            
             fig = self.plot_diamond_graph_slip_heat_map(df,global_cmap = True,subtitle=title,
                                                         y_lim=robot_param["maximum_linear_speed"],
                                                         x_lim=robot_param["maximum_angular_speed"])
@@ -1168,9 +1189,11 @@ class GraphicProductionDrive():
             plt.close('all')
             print("fig2 done")
 
-
+            print(robot_name,robot_param)
             fig3 = self.scatter_diamond_displacement_graph(df,subtitle=title, y_lim=robot_param["maximum_linear_speed"],
-                                                        x_lim=robot_param["maximum_angular_speed"],max_wheel_speed=robot_param["maximum_wheel_speed_empty"])
+                                                        x_lim=robot_param["maximum_angular_speed"],max_wheel_speed=robot_param["maximum_wheel_speed_empty"],
+                                                        robot = robot_param_list)
+            
             fig3.savefig(path_to_save/("displacement_diamond_"+file_name),format="pdf")
             plt.close('all')
             print("fig3 done")

@@ -228,6 +228,32 @@ class SlipDatasetParser:
             icp_yaw_interpolated[i, :] = spline_array[2](time)
         
         return icp_x_interpolated,icp_y_interpolated, icp_yaw_interpolated
+    def do_a_linear_interpolation(self,x,window_id,num,denum,debug=False):
+
+        index_sorted_based_on_values =  np.unique(x[window_id,:],return_index=True)[1]
+        index = np.sort(index_sorted_based_on_values)
+
+        time_vector_ref = index /self.rate 
+        
+        x_ref  = x[window_id,:][index]
+
+        x_predict = np.interp(self.step_time_vector_whole_cmd,time_vector_ref,x_ref)
+        
+        x_filtered = filtfilt(num,denum,x_predict)
+        
+
+        if debug:
+            fig, axs = plt.subplots(1,1)
+            size = 3
+            axs.scatter(self.step_time_vector_whole_cmd,x[window_id,:],alpha=1,label="Measured",s=size)
+            axs.scatter(self.step_time_vector_whole_cmd,x_predict,alpha=1,label="linear_interpolation",s=size)
+            axs.scatter(self.step_time_vector_whole_cmd,x_filtered,alpha=1,label="fitlered",s=size)
+            axs.legend()
+            axs.set_aspect("equal")
+            plt.show()
+        return x_filtered
+
+    
     def icp_traj_smoothed_butter_on_a_whole_cmd(self,x,y,yaw,time):
         #self.icp_x_array_reshape, self.icp_y_array_reshape, self.icp_yaw_array_reshape =  reshape_into_6sec_windows(self.step_icp_x_array), reshape_into_6sec_windows(self.step_icp_y_array), reshape_into_6sec_windows(self.step_icp_yaw_array)
         # icp_x_interpolated_array, icp_y_interpolated_array, icp_yaw_interpolated_array
@@ -236,7 +262,7 @@ class SlipDatasetParser:
         Wn =  fc #*2*np.pi#angular frequency in rad/s of the cut off frequency
         btype="lowpass"
         output = "ba"
-        order=5
+        order= 2
         num,denom = butter(order,Wn,btype=btype,output=output,fs=fs)
     
         icp_x_interpolated= np.zeros(x.shape)
@@ -244,9 +270,11 @@ class SlipDatasetParser:
         icp_yaw_interpolated = np.zeros(yaw.shape)
         
         for window_id in range(0, x.shape[0]):
-            icp_x_interpolated[window_id,:] = filtfilt(num,denom,x[window_id,:])
-            icp_y_interpolated[window_id,:] = filtfilt(num,denom, y[window_id,:])
-            icp_yaw_interpolated[window_id,:] = filtfilt(num,denom,yaw[window_id,:])
+
+            icp_x_interpolated[window_id,:] = self.do_a_linear_interpolation(x,window_id,num,denom)
+            icp_y_interpolated[window_id,:] = self.do_a_linear_interpolation(y,window_id,num,denom)
+            icp_yaw_interpolated[window_id,:] = self.do_a_linear_interpolation(yaw,window_id,num,denom)
+        
         
         return icp_x_interpolated,icp_y_interpolated, icp_yaw_interpolated
     def correct_interpolated_smoothed_icp_states_yaw(self):
@@ -737,7 +765,7 @@ class SlipDatasetParser:
         body_vel = self.ideal_diff_drive.compute_body_vel(cmd_vel) # compute_body_vel_IDD(cmd_vel , robot='warthog-wheel')
 
         
-        nb_data_to_compute_ss = 10 #self.nb_iteration_by_windows
+        nb_data_to_compute_ss = 20 #self.nb_iteration_by_windows
         
         #                                           Extract x,y,yaw ref state 
         step_frame_vx = reshape_into_6sec_windows(column_type_extractor(df_slip_dataset,"step_frame_vx"))
@@ -759,7 +787,6 @@ class SlipDatasetParser:
         #body_stimestelip_y = np.mean(reshape_into_6sec_windows(self.body_vel_disturption_y_array)[:,-nb_data_to_compute_ss:],axis=1)
         #raw_icp_vel_x_mean = np.mean(column_type_extractor(df_last_window, 'raw_icp_vel_x',verbose=False),axis=1)
         #raw_icp_vel_yaw_mean = np.mean(column_type_extractor(df_last_window, 'raw_icp_vel_yaw',verbose=False),axis=1)
-
 
         odom_speed_l = np.mean(reshape_into_6sec_windows(column_type_extractor(df_slip_dataset, 'left_wheel_vel',verbose=False))[:,-nb_data_to_compute_ss:],axis=1)
         odom_speed_right = np.mean(reshape_into_6sec_windows(column_type_extractor(df_slip_dataset, 'right_wheel_vel',verbose=False))[:,-nb_data_to_compute_ss:],axis=1)      
@@ -865,7 +892,6 @@ if __name__ =="__main__":
 
     df = pd.read_pickle(path_to_dataset)
 
-    
     path_2_exp = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/gravel/warthog_wheels_gravel_ral2023/model_training_results/offline")
 
     data_parser = SlipDatasetParser(df,path_2_exp,0.3,1.08,-16.6666,16.666666,20)

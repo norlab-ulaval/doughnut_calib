@@ -311,7 +311,7 @@ class DatasetParser:
 
             step_window_euler_angles = np.zeros_like(window_poses)
             
-            if i % self.n_window ==0: 
+            if i % self.n_window ==0: # n_window par step
                 tf_to_reapplied = np.linalg.inv(tf_map_first_point)
 
             for j in range(window_poses.shape[1]):

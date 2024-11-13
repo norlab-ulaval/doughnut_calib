@@ -193,6 +193,10 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
     path_to_drive_inventory = path_to_resutls_folder/(drive_inventory_names+".yaml")
     dico_ready_datasets = {"last_update_time": datetime.datetime.now()}
 
+    black_list_topic_path = "drive/model_training/data_utils/update_drive_blacklist.yaml"
+
+    with open(black_list_topic_path, 'r') as file:
+        black_list_topic = yaml.load(file, Loader=yaml.FullLoader)
 
     
     if not path_to_data.is_dir():
@@ -205,14 +209,15 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
 
     dictionnary_dataframe = {"slip_dataset":[],"steady_state_dataset":[]}
     for robot in path_to_data.iterdir():
-        if robot == "to_class":
+        if robot.name == "to_class":
             print("\n"*5, "robot == to class")
             continue
-        if robot == "marmotte":
+        elif robot.name in black_list_topic["robot_to_skip"]:
             
-            print("\n"*5, "robot is marmotte")
+            print("\n"*5, f"robot {robot.name} is in the blacklist")
             continue
 
+        
         else:
             for traction in robot.iterdir():
                 if robot == traction:
@@ -225,6 +230,9 @@ def update_yaml_file(result_folder="results_multiple_terrain_dataframe", drive_w
                         if terrain == traction:
                             print("\n"*5, f"terrain {terrain}== traction {traction}")
                             continue # Case when the folder is empty
+
+                        elif terrain.name in black_list_topic["terrain_to_skip"]:
+                            print("\n"*5, f"terrain {terrain.name} is in the blacklist")
                         else:
                             
                             for experiment in terrain.iterdir():
@@ -354,6 +362,7 @@ if __name__=="__main__":
     result_folder= update_config["result_folder"]
     drive_inventory_names = update_config["drive_inventory_names"]
     
-    dico_2_do = update_yaml_file(result_folder=result_folder, drive_workspace=drive_workspace, drive_inventory_names = drive_inventory_names, produce_video = args.produce_video)
+    produce_video = True
+    dico_2_do = update_yaml_file(result_folder=result_folder, drive_workspace=drive_workspace, drive_inventory_names = drive_inventory_names, produce_video = produce_video)
     dico_2_do.pop("last_update_time")
     list_dataframe = list(dico_2_do.values())

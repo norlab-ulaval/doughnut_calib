@@ -26,3 +26,10 @@ print("\nRight Wheel Voltage Description:\n", right_wheel_voltage_desc)
 
 print(np.sqrt(5000/500/0.5))
 
+
+print(np.arange(1,2,0.1))
+
+
+test = np.arange(100)
+
+print(np.clip(test,2,10))
