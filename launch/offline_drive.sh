@@ -13,7 +13,7 @@ fi
 INPUT_FOLDER="$1"
 echo $INPUT_FOLDER
 
-BASENAME="${INPUT_FOLDER:41:-16}"  # Get the base name without extension
+BASENAME="${INPUT_FOLDER:88:-16}"  # Get the base name without extension
 echo $BASENAME
 
 ROSBAG_PATH="$INPUT_FOLDER/${BASENAME}_to_remap"
@@ -49,6 +49,14 @@ cat <<EOL > "$config_file"
       use_sim_time: true
 EOL
 
+# stop the record screen
+screen -S record -X stuff $'\003'
+
+# stop all other screens
+screen -S drive_logger -X stuff $'\003'
+screen -S mapping -X stuff $'\003'
+screen -S bagplay -X stuff $'\003'
+
 # launch the record in a screen
 screen -dmS record ros2 bag record /mapping/icp_odom -o "$ROSBAG_RECORD" -s mcap --use-sim-time
 
@@ -58,16 +66,20 @@ screen -dmS drive_logger ros2 launch drive offline_logger_warthog.launch.py
 # launch the mapping (loc mode) in a screen
 screen -dmS mapping ros2 launch drive offline_mapping.launch.py
 
+echo "Rosbag path: $ROSBAG_PATH"
+echo "Pkl file: $PKL_FILE"
+screen -dmS bagplay ./screen_bagplay.sh $ROSBAG_PATH $PKL_FILE
+
 # Play the rosbag in the current terminal so we can pipe the service call after it.
-ros2 bag play -r 0.1 "$ROSBAG_PATH" --clock
+#screen -dmS bagplay ros2 bag play -r 0.1 "$ROSBAG_PATH" --clock
 
 # call the service to save the logger data
-ros2 service call /drive/export_data norlab_controllers_msgs/srv/ExportData "export_path:
-       data: '"$PKL_FILE"'"
+#screen -dmS service_call ros2 service call /drive/export_data norlab_controllers_msgs/srv/ExportData "export_path:
+#       data: '"$PKL_FILE"'"
 
 # stop the record screen
-screen -S record -X stuff $'\003'
+#screen -S record -X stuff $'\003'
 
 # stop all other screens
-screen -S drive_logger -X stuff $'\003'
-screen -S mapping -X stuff $'\003'
+#screen -S drive_logger -X stuff $'\003'
+#screen -S mapping -X stuff $'\003'
