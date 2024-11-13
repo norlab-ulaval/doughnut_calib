@@ -22,7 +22,7 @@ husky_wheels-deflated_tile_2023_12_12_16h16:
   roboticist: dominicbaril
   terrain: datasets/data/husky/wheels-deflated/tile/husky
   traction: ws/src/DRIVE/drive
-last_update_time: 2024-11-07 14:52:27.587417
+last_update_time: 2024-11-12 13:22:46.594588
 warthog_wheels_asphalt_2024_8_7_10h31s34:
   calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
   - /

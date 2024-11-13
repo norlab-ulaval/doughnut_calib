@@ -12,7 +12,8 @@ import argparse
 
 DATASET_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
 GEOM_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
-CLINE = True
+TOGGLE_CLINE = False
+TOGGLE_PROPORTIONNAL = True
 
 # Gaussian parameters
 MU_X = 0
@@ -118,7 +119,7 @@ def process_gma_meshgrid(X, y, x_2_eval):
 
 def process_data(df, list_col_interest,terrain,geom_to_filter = {}, 
                 list_colormap = None, col_x_y = ["cmd_right_wheels","cmd_left_wheels"],
-                x_lim = (-6,6), y_lim = (-6,6)):
+                x_lim = (-6,6), y_lim = (-6,6), proportionnal = False):
     
     # Assert that the number of element in list_ax_mean, list_ax_std and list_col_interest are the same
     assert len(list_col_interest) == len(list_colormap)
@@ -151,6 +152,14 @@ def process_data(df, list_col_interest,terrain,geom_to_filter = {},
     for i in range(len(list_col_interest)):
         y = np.ravel(column_type_extractor(df, list_col_interest[i]))
         data_mean, data_std = process_gma_meshgrid(X, y, x_2_eval)
+        if proportionnal:
+            # If list_col_interest contains yaw in the name then we need to divide by the angular velocity
+            if "yaw" in list_col_interest[i]:
+                data_mean = data_mean/x_2_eval[:,1]
+                data_std = data_std/x_2_eval[:,1]
+            else:
+                data_mean = data_mean/x_2_eval[:,0]
+                data_std = data_std/x_2_eval[:,0]
         list_data_mean.append(data_mean)
         list_data_std.append(data_std)
         list_y.append(y)
@@ -169,7 +178,7 @@ def process_data(df, list_col_interest,terrain,geom_to_filter = {},
     return dict_results
 
 
-def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
+def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, proportionnal = False):
     
     with open(geom_path, 'rb') as file:
         geom_by_terrain = pickle.load(file)["body"]
@@ -188,8 +197,12 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
     fig_mean.canvas.manager.set_window_title('Mean Heat Map')
     fig_std.canvas.manager.set_window_title('Standard Deviation Heat Map')
     
-    list_col_interest = ["slip_body_x_ss","slip_body_y_ss","slip_body_yaw_ss"]
-    list_colormap = ["PuOr", "PuOr", "PiYG"]
+    if proportionnal:
+        list_col_interest = ["slip_body_x_ss","slip_body_yaw_ss"]
+        list_colormap = ["PuOr", "PiYG"]
+    else:
+        list_col_interest = ["slip_body_x_ss","slip_body_y_ss","slip_body_yaw_ss"]
+        list_colormap = ["PuOr", "PuOr", "PiYG"]
     
     # Create a list by terrain for the data mean, std and y
     terrain_dict = {}
@@ -203,8 +216,10 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
         
         if cline:
             list_cline_factor = LIST_CLINE_FACTOR
+        else:
+            list_cline_factor = [None]*len(list_col_interest)
         dict_results = process_data(df_terrain, list_col_interest, terrain, geom_to_filter = geom_by_terrain, 
-                                    list_colormap = list_colormap, col_x_y = col_x_y)
+                                    list_colormap = list_colormap, col_x_y = col_x_y, proportionnal = proportionnal)
         
         terrain_dict[terrain] = dict_results
 
@@ -212,10 +227,12 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
     dict_vmax_mean = {}
     dict_vmax_std = {}
     for j in range(size):
-        terrain = list_terrain[i]
+        terrain = list_terrain[j]
         for i in range(len(list_colormap)):
-            vmax_mean = np.max(np.abs(terrain_dict[terrain]["list_data_mean"][i]))
-            vmax_std = np.max(np.abs(terrain_dict[terrain]["list_data_std"][i]))
+            mean_list = terrain_dict[terrain]["list_data_mean"][i]
+            std_list = terrain_dict[terrain]["list_data_std"][i]
+            vmax_mean = np.max(np.abs(mean_list[~np.isnan(mean_list)]))
+            vmax_std = np.max(np.abs(std_list[~np.isnan(std_list)]))
             if list_colormap[i] in dict_vmax_mean:
                 if dict_vmax_mean[list_colormap[i]] < vmax_mean:
                     dict_vmax_mean[list_colormap[i]] = vmax_mean
@@ -246,14 +263,16 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
         x_lim = terrain_dict[terrain]["x_lim"]
         y_lim = terrain_dict[terrain]["y_lim"]
         filter = terrain_dict[terrain]["filter"]
+        list_im_mean = []
+        list_im_std = []
         for j in range(len(list_col_interest)):
             data_mean = terrain_dict[terrain]["list_data_mean"][j]
             data_std = terrain_dict[terrain]["list_data_std"][j]
             y = terrain_dict[terrain]["list_y"][j]
-            im_mean = plot_image(axs_mean_plot[j], X, data_mean, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
-                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_mean[list_colormap[j]])
-            im_std = plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
-                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]])
+            list_im_mean.append(plot_image(axs_mean_plot[j], X, data_mean, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
+                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_mean[list_colormap[j]]))
+            list_im_std.append(plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
+                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]]))
 
         axs_mean_plot[0].set_title(f"{terrain}")
         axs_std_plot[0].set_title(f"{terrain}")
@@ -269,7 +288,6 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
 
     if size == 1:
         # Add a colorbar
-        """
         cbar = plt.colorbar(list_im_mean[0], ax=axs_mean_plot[0])
         cbar.set_label("Slip Body X ss [m/s]")  
         cbar = plt.colorbar(list_im_mean[1], ax=axs_mean_plot[1])
@@ -282,23 +300,20 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True):
         cbar.set_label("Slip Body Y ss [m/s]")
         cbar = plt.colorbar(list_im_std[2], ax=axs_std_plot[2])
         cbar.set_label("Slip Body yaw ss [rad/s]")
-        """
     else:
         # Add a colorbar
-        """
         cbar = plt.colorbar(list_im_mean[0], ax=axs_mean[0,axs_mean.shape[1]-1])
         cbar.set_label("Slip Body X ss [m/s]")  
-        cbar = plt.colorbar(list_im_mean[1], ax=axs_mean[1,axs_mean.shape[1]-1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_mean[2], ax=axs_mean[2,axs_mean.shape[1]-1])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
-        cbar = plt.colorbar(list_im_std[0], ax=axs_std[0,axs_std.shape[1]-1])
-        cbar.set_label("Slip Body X ss [m/s]")
-        cbar = plt.colorbar(list_im_std[1], ax=axs_std[1,axs_std.shape[1]-1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_std[2], ax=axs_std[2,axs_std.shape[1]-1])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
-        """
+        #cbar = plt.colorbar(list_im_mean[1], ax=axs_mean[1,axs_mean.shape[1]-1])
+        #cbar.set_label("Slip Body Y ss [m/s]")
+        #cbar = plt.colorbar(list_im_mean[2], ax=axs_mean[2,axs_mean.shape[1]-1])
+        #cbar.set_label("Slip Body yaw ss [rad/s]")
+        #cbar = plt.colorbar(list_im_std[0], ax=axs_std[0,axs_std.shape[1]-1])
+        #cbar.set_label("Slip Body X ss [m/s]")
+        #cbar = plt.colorbar(list_im_std[1], ax=axs_std[1,axs_std.shape[1]-1])
+        #cbar.set_label("Slip Body Y ss [m/s]")
+        #cbar = plt.colorbar(list_im_std[2], ax=axs_std[2,axs_std.shape[1]-1])
+        #cbar.set_label("Slip Body yaw ss [rad/s]")
         
     for ax in np.ravel(axs_mean):
         ax.set_facecolor("black")
@@ -319,7 +334,8 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Process some arguments.")
     parser.add_argument("--dataset",type=str,help="Path to the pickle file", default=DATASET_PICKLE)
     parser.add_argument("--geom",type=str,help="Path to the pickle file containing the geom", default=GEOM_PICKLE)
-    parser.add_argument("--cline",type=bool,help="Plot the cline", default=CLINE)
+    parser.add_argument("--cline",type=bool,help="Plot the cline", default=TOGGLE_CLINE)
+    parser.add_argument("--proportionnal", type=bool, help="Plot the proportionnal slip instead of the absolute", default=TOGGLE_PROPORTIONNAL)
 
     # Parse the arguments
     args = parser.parse_args()
@@ -327,5 +343,6 @@ if __name__=="__main__":
     path = pathlib.Path(parser.parse_args().dataset)
     path_to_geom = pathlib.Path(parser.parse_args().geom)
     cline = parser.parse_args().cline
+    proportionnal = parser.parse_args().proportionnal
 
-    plot_heat_map_gaussian_moving_average(path, path_to_geom, cline)
+    plot_heat_map_gaussian_moving_average(path, path_to_geom, cline, proportionnal)

@@ -325,7 +325,7 @@ if __name__=="__main__":
         '--produce_video',
         type= bool,
         help='Specify whether to produce a video (true or false; default: false)',
-        default=0
+        default=1
     )
     parser.add_argument(
         "--drive_workspace",
