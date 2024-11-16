@@ -72,6 +72,10 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, f
     if ax == None:
         fig, ax = plt.subplots(1,1)
 
+    # Change the axis to be log scale
+    ax.set_xscale("linear")
+    ax.set_yscale("linear")
+
     if isinstance(filter,np.ndarray): 
         filtered_prediction = np.where(filter,mean_prediction.reshape(shape),0)
         
@@ -290,16 +294,16 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], ax=axs_mean_plot[0])
         cbar.set_label("Slip Body X ss [m/s]")  
-        cbar = plt.colorbar(list_im_mean[1], ax=axs_mean_plot[1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_mean[2], ax=axs_mean_plot[2])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
-        cbar = plt.colorbar(list_im_std[0], ax=axs_std_plot[0])
-        cbar.set_label("Slip Body X ss [m/s]")
-        cbar = plt.colorbar(list_im_std[1], ax=axs_std_plot[1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_std[2], ax=axs_std_plot[2])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
+        #cbar = plt.colorbar(list_im_mean[1], ax=axs_mean_plot[1])
+        #cbar.set_label("Slip Body Y ss [m/s]")
+        #cbar = plt.colorbar(list_im_mean[2], ax=axs_mean_plot[2])
+        #cbar.set_label("Slip Body yaw ss [rad/s]")
+        #cbar = plt.colorbar(list_im_std[0], ax=axs_std_plot[0])
+        #cbar.set_label("Slip Body X ss [m/s]")
+        #cbar = plt.colorbar(list_im_std[1], ax=axs_std_plot[1])
+        #cbar.set_label("Slip Body Y ss [m/s]")
+        #cbar = plt.colorbar(list_im_std[2], ax=axs_std_plot[2])
+        #cbar.set_label("Slip Body yaw ss [rad/s]")
     else:
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], ax=axs_mean[0,axs_mean.shape[1]-1])
@@ -324,8 +328,10 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         ax.set_aspect('equal', 'box')
 
     # Optional label for the colorbar
-    fig_mean.savefig(path.parent/("mean" + path.parts[-1]+".pdf"),format="pdf")
-    fig_std.savefig(path.parent/("std" + path.parts[-1]+".pdf"),format="pdf")
+    mean_filename = "mean_heat_map_gma.pdf"
+    std_filename = "std_heat_map_gma.pdf"
+    fig_mean.savefig(path.parent/mean_filename,format="pdf")
+    fig_std.savefig(path.parent/std_filename,format="pdf")
     plt.show()
 
 

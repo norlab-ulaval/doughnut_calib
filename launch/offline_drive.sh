@@ -13,7 +13,7 @@ fi
 INPUT_FOLDER="$1"
 echo $INPUT_FOLDER
 
-BASENAME="${INPUT_FOLDER:88:-16}"  # Get the base name without extension
+BASENAME="${INPUT_FOLDER:52:-16}"  # Get the base name without extension
 echo $BASENAME
 
 ROSBAG_PATH="$INPUT_FOLDER/${BASENAME}_to_remap"
