@@ -105,43 +105,43 @@ def compute_calib_step_from_cmd_vel_x(df,path_2_save,nb_points_by_window=6*20):
 if __name__ == "__main__":
 
     #path_2_dataraw = "drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_datasets/raw_dataframe_wronged_calib_0_1.pkl"
-    path_2_dataraw = "drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_datasets/raw_dataframe_wronged_calib_0_05.pkl"
+    path_2_dataraw = "drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_datasets/raw_dataframe_wronged_calib.pkl"
     path_to_save = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_datasets/raw_dataframe.pkl"
     df_raw = pd.read_pickle(path_2_dataraw)
     compute_calib_step_from_cmd_vel_x(df_raw,path_to_save)
     print(df_raw.shape)
     
 
-    path_2_dataraw2 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/raw_dataframe_wronged_calib_step_0_1.pkl"
+    path_2_dataraw2 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/raw_dataframe_wronged_calib.pkl"
     path_to_save_2 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/raw_dataframe.pkl"
     
     df_raw_2 = pd.read_pickle(path_2_dataraw2)
     print(df_raw_2.shape)
-    compute_calib_step_from_cmd_vel_x(df_raw_2[:int(1117/0.05)],path_to_save_2)
+    compute_calib_step_from_cmd_vel_x(df_raw_2[:int(1127/0.05)],path_to_save_2)
 
 
-    path_to_example = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_ral2023/model_training_datasets/raw_dataframe.pkl"
-
-    df_ex = pd.read_pickle(path_to_example)
-
-    df_ex.calib_step = df_ex.calib_step.astype(float).to_numpy()
-
-    calib_value = df_ex.loc[df_ex.calib_state == "calib"]
-    
-    
-    df_ex.to_csv("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/test.csv")
-    df_raw.to_csv("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/test_raw.csv")
-    fig,axs = plt.subplots(2,sharex=True)
-    
-    plt.show()
-
-
-    path_2_dataraw3 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_datasets/raw_dataframe_without_calib_step.pkl"
-    path_to_save_3 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_datasets/raw_dataframe.pkl"
-    
-    df_raw_3 = pd.read_pickle(path_2_dataraw3)
-    print(df_raw_3.shape)
-    compute_calib_step_from_cmd_vel_x(df_raw_3,path_to_save_3)
-    plt.show()
-
-
+   # path_to_example = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_ral2023/model_training_datasets/raw_dataframe.pkl"
+#
+   # df_ex = pd.read_pickle(path_to_example)
+#
+   # df_ex.calib_step = df_ex.calib_step.astype(float).to_numpy()
+#
+   # calib_value = df_ex.loc[df_ex.calib_state == "calib"]
+   # 
+   # 
+   # #df_ex.to_csv("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/test.csv")
+    #df_raw.to_csv("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/test_raw.csv")
+    #fig,axs = plt.subplots(2,sharex=True)
+    #
+    #plt.show()
+#
+#
+    #path_2_dataraw3 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_datasets/raw_dataframe_without_calib_step.pkl"
+    #path_to_save_3 = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_datasets/raw_dataframe.pkl"
+    #
+    #df_raw_3 = pd.read_pickle(path_2_dataraw3)
+    #print(df_raw_3.shape)
+    #compute_calib_step_from_cmd_vel_x(df_raw_3,path_to_save_3)
+    #plt.show()
+#
+#

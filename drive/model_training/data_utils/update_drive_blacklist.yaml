@@ -4,7 +4,9 @@ terrain_to_skip:
   #- gravel
   #- grass
   #- sand
+  #- ice
+  #- asphalt
 robot_to_skip:
   - noskip
-  #- husky
+  - husky
   #- marmotte

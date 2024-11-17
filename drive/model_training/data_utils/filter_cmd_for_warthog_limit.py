@@ -504,7 +504,7 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df):
 if __name__=="__main__":
     
     path = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    filter_all_results_clearpath(path,"warthog","all_speed",debug=False)
+    filter_all_results_clearpath(path,"warthog","all",debug=False)
     
 
     #

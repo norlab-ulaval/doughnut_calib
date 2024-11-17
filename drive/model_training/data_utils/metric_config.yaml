@@ -19,10 +19,18 @@ metric:
   KineticEnergyMetricOnly:
     robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
 
+  SlopeMetric:
+    robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+    computation: "mean-steady-state"
+    joule_treshold: 1.0
+    steady_state_only: True 
+    mean_the_steady_state: False
+    path_to_save: "drive_datasets/results_multiple_terrain_dataframe/metric/results_slope_metric.csv"
 motion_model:
   path_to_motion_model_results: "drive_datasets/results_multiple_terrain_dataframe/metric/motion_model_prediction_error.pkl"
   ideal_diff_drive:
     robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
+
 
 
 
@@ -52,5 +60,6 @@ datasets:
     rate: 20
     format: "n_cmd x horizon"
     horizon: 6
+    n_steady_state: 40
 
     
