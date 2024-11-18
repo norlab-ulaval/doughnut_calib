@@ -103,7 +103,9 @@ class DifficultyMetric():
         # Read results_file 
         list_possible_metric = ["kinetic_energy","kinetic_energy_wheel_encoder",
                                 "kinetic_energy_wheel_encoder_ratio","DiffSpeedProprioExteroEnergy",
-                                "KineticEnergyWheelOnly","KineticEnergyICPOnly","KineticEnergyMetricOnly"]
+                                "KineticEnergyWheelOnly","KineticEnergyICPOnly","KineticEnergyMetricOnly",
+                                "SlopeMetric"]
+        
         if not PATH_TO_RESULT_FILE.is_file():
             empty_dict  = {}
             for metric in list_possible_metric:
@@ -312,9 +314,7 @@ class KineticEnergyMetricWheelEncoder(KineticEnergyMetric):
 
         with open(PATH_TO_RESULT_FILE, 'wb') as file:
             results_file = pickle.dump(self.results_file,file)
-        
 
-        
         #self.saving_path = path_to_dataset_folder
         
 
@@ -683,52 +683,231 @@ class KineticEnergyMetricOnly(KineticEnergyMetricWheelEncoder):
                 resulting_energy[energy_name] = kinetic_metric
 
         return resulting_energy
+    
 
+
+
+
+class SlopeMetric(KineticEnergyMetricWheelEncoder):
+
+    def __init__(self,metric_name,robot_name) -> None:
+        super().__init__(metric_name,robot_name)
+
+        self.metric_name = "SlopeMetric"
+        self.joule_treshold = self.metric_parameters['joule_treshold']
+        self.steady_state_only = self.metric_parameters['steady_state_only']
+        self.mean_the_steady_state = self.metric_parameters['mean_the_steady_state']
+
+    def compute_average_slope(self,x,y,joules_treshold=500.0, n_steady_state=40):
+        
+        
+        #mask_x = (x > np.percentile(x,2.5)) & (x < np.percentile(x,97.5))
+        #mask_y = (y > np.percentile(y,2.5)) & (y < np.percentile(y,97.5))
+        
+
+        if self.steady_state_only:
+            x = x[:,-n_steady_state:]
+            y = y[:,-n_steady_state:]
+        
+        
+        if self.mean_the_steady_state:
+            x = np.mean(x,axis=1)
+            y = np.mean(y,axis=1)
+
+        mask = np.abs(x)>=joules_treshold
+
+        #mask = mask_x| mask_y
+        x_masked = x[mask]
+        y_masked = y[mask]
+
+        m_slope = y_masked/x_masked
+        
+        mean_slope = np.mean(m_slope)
+        std_slope = np.std(m_slope)
+
+        metric_raw = np.abs(1- m_slope)
+        metric_mean = np.mean(np.abs(1- m_slope))
+        std_metric = np.std(np.abs(1- m_slope))
+        x_95 = np.percentile(x_masked,95)
+        return m_slope,mean_slope,std_slope,metric_mean,std_metric, metric_raw,x_95
+
+    def filter_contamination(self,df_energy_cmd,terrain,treshold):
+
+        df = df_energy_cmd.loc[df_energy_cmd.terrain==terrain]
+
+        rotationnal_cmd = np.mean(extract_ss_based_on_ratio(df,"rotationnal_energy_metric"),axis=1)
+        translationnal_cmd = np.mean(extract_ss_based_on_ratio(df,"translationnal_energy_metric"),axis=1)
+        total_energy_cmd = np.mean(extract_ss_based_on_ratio(df,"total_energy_metric"),axis=1)
+            
+        mask_rotationnal = (translationnal_cmd/total_energy_cmd) < treshold
+
+        mask_translationnal =  (rotationnal_cmd/total_energy_cmd)  < treshold
+
+        return mask_rotationnal, mask_translationnal
+
+    def n_rows_filter(self,list_col,n_rows):
+        
+        filtered_cols = []
+        for col in list_col:
+            if n_rows != -1:
+                col.reset_index(inplace=True)
+                col[:n_rows]
+
+            filtered_cols.append(col)
+        return filtered_cols
+
+    def compute_slope_metric(self,dataset, gt_energies, idd_energies,debug=False,n_steady_state=40):
+        if dataset["format"] == "n_cmd x horizon":
+            resulting_energy = {}
+            resulting_energy['steady_state_only'] = self.steady_state_only
+            resulting_energy['mean_the_steady_state'] = self.mean_the_steady_state
+            
+
+            energy_order = ["total_energy_metric","rotationnal_energy_metric","translationnal_energy_metric"]
+            
+            for energy_name,gt_energy, idd_energy in zip(energy_order,gt_energies,idd_energies):
+
+                m_slope,mean_slope,std_slope,metric,std_metric, metric_raw,x_95 = self.compute_average_slope(idd_energy,gt_energy ,
+                                                                                            joules_treshold=self.joule_treshold,
+                                                                                            n_steady_state = n_steady_state)
+                resulting_energy["std_slope_" +energy_name] = std_slope
+                resulting_energy["mean_slope_" +energy_name] = mean_slope
+                resulting_energy["cmd_95_"+energy_name] = x_95
+                resulting_energy["maximum_cmd_energy_"+energy_name] = np.max(idd_energy)
+                resulting_energy["metric_"+energy_name] = metric
+                resulting_energy["std_metric_"+energy_name] = std_metric
+                #resulting_energy["metric_raw"+energy_name] = metric_raw
+                if debug and energy_name=="total_energy_metric":
+                    plt.hist(metric_raw,range=(-4,4),bins=60)
+                    #plt.boxplot(metric_raw,showfliers=False)
+                    print("________")
+                    print("median",np.median(metric_raw))
+                    print("mean",np.mean(metric_raw))
+                    print("std",np.std(metric_raw))
+                    #plt.title()
+                    plt.show()
+            resulting_energy["joule_treshold"] = self.joule_treshold
+        
+        return resulting_energy 
+            
+    def compute_kinetic_energy_metric(self,dataset,n_steady_state, n_rows=-1,debug=True):
+        """Compute the kinetic energy metric of the terrain
+
+        Args:
+            dataset (_type_): Dataset containing all results of one vehicle on one terrain. 
+
+        Returns:
+            _type_: _description_
+        """
+        
+        ### Extract kinematic gt
+        columns = self.n_rows_filter([dataset["gt_body_lin_vel"],
+                                                dataset["gt_body_y_vel"],
+                                                dataset["gt_body_yaw_vel"]],n_rows)
+        gt_energies = self.compute_energy(columns[0],columns[1],columns[2])
+        
+
+        ## Extract IDD
+        y_cmd =np.zeros(dataset["cmd_body_lin_vel"].shape)
+        columns2 = self.n_rows_filter([dataset["cmd_body_lin_vel"],
+                                                y_cmd,
+                                                dataset["cmd_body_yaw_vel"]],n_rows)
+        idd_energies = self.compute_energy(columns2[0],columns2[1],columns2[2])      
+        
+        ## Extract Wheel
+        columns3 = self.n_rows_filter([dataset["gt_left_wheel"],
+                                                dataset["gt_right_wheel"],dataset["gt_body_y_vel"]],n_rows)
+        wheel_encoder_energies = self.compute_energy_from_wheel_encoder(columns3[0],columns[1],columns[2])
+
+        resulting_energy_cmd = self.compute_slope_metric(dataset,gt_energies, idd_energies,debug=False,n_steady_state=n_steady_state)
+        
+        resulting_energy_wheels = self.compute_slope_metric(dataset,gt_energies, wheel_encoder_energies,debug=True,n_steady_state=n_steady_state)
+        
+        return resulting_energy_cmd,resulting_energy_wheels
+    
+
+    def compute_all_terrain(self,dataset,multiple_terrain=False):
+
+        new_file =False
+        list_row = []
+        list_row_encoder = []
+        
+        for terrain in dataset.terrains:
+            
+            dico_data = dataset[terrain]
+            shape = dico_data["cmd_left_wheel"].shape
+            result_terrain_cmd, result_terrain_encoder = self.compute_kinetic_energy_metric(dico_data,dataset.datasets_info["n_steady_state"])
+
+
+            # Create all names
+            dico_temp = {"terrain":terrain}
+            dico_temp.update(result_terrain_cmd)
+            list_row.append(dico_temp) 
+
+            #
+            dico_temp2 = {"terrain":terrain}
+            dico_temp2.update(result_terrain_encoder)
+            list_row_encoder.append(dico_temp2) 
+            
+
+        df_all_terrain = pd.DataFrame.from_records(list_row)
+        df_all_terrain.to_csv(self.metric_parameters['path_to_save'])
+
+        df_all_terrain = pd.DataFrame.from_records(list_row_encoder)
+        df_all_terrain.to_csv(self.metric_parameters['path_to_save'][:-4]+"_wheel_encoder.csv")
+
+        #self.saving_path = path_to_dataset_folder
+
+    
+    
 if __name__ == "__main__":
 
     dataset = Dataset2Evaluate("drive_dataset")
     
-    dm = KineticEnergyMetric("kinetic_energy","warthog")
-    path_to_result = dm.compute_all_terrain(dataset)
-
-
-    graph_metric = GraphMetric(dataset,dm)
-    graph_metric.graph_metric_boxplot_by_terrain()
-
-    
-    dm2 = KineticEnergyMetricWheelEncoder("kinetic_energy_wheel_encoder","warthog")
-    path_to_result2 = dm2.compute_all_terrain(dataset)
-    graph_metric2 = GraphMetric(dataset,dm2)
-    graph_metric2.graph_metric_boxplot_by_terrain()
-
-    dm3 = KineticEnergyMetricWheelEncoderRatio("kinetic_energy_wheel_encoder_ratio","warthog")
-    path_to_result2 = dm3.compute_all_terrain(dataset)
-    graph_metric3 = GraphMetric(dataset,dm3)
-    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
-
-
-    dm4 = DiffSpeedProprioExteroEnergy("DiffSpeedProprioExteroEnergy","warthog")
-    path_to_result2 = dm4.compute_all_terrain(dataset)
-    graph_metric3 = GraphMetric(dataset,dm4)
-    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
-    
-    
-    dm5 = KineticEnergyICPOnly("KineticEnergyICPOnly","warthog")
-    path_to_result2 = dm5.compute_all_terrain(dataset)
-    graph_metric3 = GraphMetric(dataset,dm5)
-    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
-    
-    dm6 = KineticEnergyWheelOnly("KineticEnergyWheelOnly","warthog")
-    path_to_result2 = dm6.compute_all_terrain(dataset)
-    graph_metric3 = GraphMetric(dataset,dm6)
-    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
-    
-
-    print("start")
-    dm7 = KineticEnergyMetricOnly("KineticEnergyMetricOnly","warthog")
-    path_to_result2 = dm7.compute_all_terrain(dataset)
-    print("start")
-    graph_metric3 = GraphMetric(dataset,dm7)
-    graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    dm0 = SlopeMetric("SlopeMetric","warthog")
+    path_to_result = dm0.compute_all_terrain(dataset)
+#
+    #dm = KineticEnergyMetric("kinetic_energy","warthog")
+    #path_to_result = dm.compute_all_terrain(dataset)
+#
+#
+    #graph_metric = GraphMetric(dataset,dm)
+    #graph_metric.graph_metric_boxplot_by_terrain()
+#
+    #
+    #dm2 = KineticEnergyMetricWheelEncoder("kinetic_energy_wheel_encoder","warthog")
+    #path_to_result2 = dm2.compute_all_terrain(dataset)
+    #graph_metric2 = GraphMetric(dataset,dm2)
+    #graph_metric2.graph_metric_boxplot_by_terrain()
+#
+    #dm3 = KineticEnergyMetricWheelEncoderRatio("kinetic_energy_wheel_encoder_ratio","warthog")
+    #path_to_result2 = dm3.compute_all_terrain(dataset)
+    #graph_metric3 = GraphMetric(dataset,dm3)
+    #graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+#
+#
+    #dm4 = DiffSpeedProprioExteroEnergy("DiffSpeedProprioExteroEnergy","warthog")
+    #path_to_result2 = dm4.compute_all_terrain(dataset)
+    #graph_metric3 = GraphMetric(dataset,dm4)
+    #graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    #
+    #
+    #dm5 = KineticEnergyICPOnly("KineticEnergyICPOnly","warthog")
+    #path_to_result2 = dm5.compute_all_terrain(dataset)
+    #graph_metric3 = GraphMetric(dataset,dm5)
+    #graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    #
+    #dm6 = KineticEnergyWheelOnly("KineticEnergyWheelOnly","warthog")
+    #path_to_result2 = dm6.compute_all_terrain(dataset)
+    #graph_metric3 = GraphMetric(dataset,dm6)
+    #graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
+    #
+#
+    #print("start")
+    #dm7 = KineticEnergyMetricOnly("KineticEnergyMetricOnly","warthog")
+    #path_to_result2 = dm7.compute_all_terrain(dataset)
+    #print("start")
+    #graph_metric3 = GraphMetric(dataset,dm7)
+    #graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
     
     

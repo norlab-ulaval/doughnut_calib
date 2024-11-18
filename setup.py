@@ -38,7 +38,8 @@ setup(
             'calibration_node = drive.drive_node:main',
             'maestro_node = drive.drive_maestro_node:main',
             'pose_cmds_logger_node = drive.pose_cmds_logger_node:main',
-            'model_trainer_node = drive.model_trainer_node:main'
+            'model_trainer_node = drive.model_trainer_node:main',
+            'husky_pose_cmds_logger_node = drive.husky_pose_cmds_logger_node:main'
         ],
     },
 )

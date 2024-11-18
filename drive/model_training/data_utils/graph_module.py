@@ -1264,9 +1264,9 @@ if __name__ == "__main__":
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(global_cmap=True)
     #plt.show()
     #
-    #plot_all_warthog_filtered_data()
+    plot_all_warthog_filtered_data()
     #plt.show()
-    plot_all_unfiltered_data()
+    #plot_all_unfiltered_data()
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(graphic_designer.df_diamond,diff_referential=True)
 
     #fig3 = graphic_designer.scatter_diamond_displacement_graph_diff(graphic_designer.df_diamond,subtitle="")

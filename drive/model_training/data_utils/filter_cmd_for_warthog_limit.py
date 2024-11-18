@@ -516,5 +516,14 @@ if __name__=="__main__":
 
     filter_all_results_clearpath(path,robot,max_lin_speed,debug=debug)
     
+<<<<<<< HEAD
+=======
+    path = "/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
+    filter_all_results_clearpath(path,"warthog","all",debug=False)
+    
+
+    #
+
+>>>>>>> 8e9557e0b13a859bb39190ea81798b93a83b0da4
     
 
