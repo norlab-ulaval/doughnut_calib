@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import pandas as pd
@@ -1141,14 +1140,12 @@ class GraphicProductionDrive():
         path_to_save = self.path_to_analysis/"heatmap_slip"/"by_robot"
 
         if path_to_save.is_dir() == False:
-            path_to_save.mkdir()
+            path_to_save.mkdir(parents=True, exist_ok=True)
 
         
 
         for robot in df_diamond["robot"].unique():
             df_sampling_speed = df_diamond.loc[df_diamond["robot"]==robot]
-            
-            
 
             if robiticis_specific:
                 for roboticist in df_sampling_speed["roboticist"].unique():
@@ -1233,8 +1230,8 @@ def plot_all_unfiltered_data():
 def plot_all_warthog_filtered_data():
 
     ### TODO add prefiltered_prefix_to_results. 
-    path_to_dataframe_slip = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_slip_dataset.pkl"
-    path_to_dataframe_diamond= "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_steady_state_dataset.pkl"
+    path_to_dataframe_slip = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
+    path_to_dataframe_diamond= "drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
 
     path_to_config_file=""
 

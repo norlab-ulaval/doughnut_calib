@@ -1,28 +1,4 @@
-husky_wheels-deflated_tile_2023_12_12_16h16:
-  calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
-  - /
-  - home
-  - wilah
-  - workspace
-  - ros2_ws
-  - src
-  - DRIVE
-  - drive_datasets
-  - data
-  - husky
-  - wheels-deflated
-  - tile
-  - husky_wheels-deflated_tile_2023_12_12_16h16
-  - config_file_used
-  - _husky.config.yaml
-  id: husky_wheels-deflated_tile_2023_12_12_16h16
-  path_2_slip_dataset: /home/wilah/workspace/ros2_ws/src/DRIVE/drive_datasets/data/husky/wheels-deflated/tile/husky_wheels-deflated_tile_2023_12_12_16h16/model_training_datasets/slip_dataset_all.pkl
-  path_2_steady_state_dataset: /home/wilah/workspace/ros2_ws/src/DRIVE/drive_datasets/data/husky/wheels-deflated/tile/husky_wheels-deflated_tile_2023_12_12_16h16/model_training_datasets/steady_state_results.pkl
-  robot: /home/wilah/workspace/ros2
-  roboticist: dominicbaril
-  terrain: datasets/data/husky/wheels-deflated/tile/husky
-  traction: ws/src/DRIVE/drive
-last_update_time: 2024-11-12 13:22:46.594588
+last_update_time: 2024-11-18 15:56:54.786861
 warthog_wheels_asphalt_2024_8_7_10h31s34:
   calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
   - /
@@ -286,6 +262,54 @@ warthog_wheels_gravel_ral2023:
   robot: /home/wilah/workspace/ros2
   roboticist: dominicbaril
   terrain: datasets/data/warthog/wheels/gravel/warthog
+  traction: ws/src/DRIVE/drive
+warthog_wheels_ice:
+  calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
+  - /
+  - home
+  - wilah
+  - workspace
+  - ros2_ws
+  - src
+  - DRIVE
+  - drive_datasets
+  - data
+  - warthog
+  - wheels
+  - ice
+  - warthog_wheels_ice
+  - config_file_used
+  - _warthog.config.yaml
+  id: warthog_wheels_ice
+  path_2_slip_dataset: /home/wilah/workspace/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_datasets/slip_dataset_all.pkl
+  path_2_steady_state_dataset: /home/wilah/workspace/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_datasets/steady_state_results.pkl
+  robot: /home/wilah/workspace/ros2
+  roboticist: nicolassamson
+  terrain: datasets/data/warthog/wheels/ice/warthog
+  traction: ws/src/DRIVE/drive
+warthog_wheels_ice_2024_7_30_16h30s21_ice_param:
+  calibration_node_config_file: !!python/object/apply:pathlib.PosixPath
+  - /
+  - home
+  - wilah
+  - workspace
+  - ros2_ws
+  - src
+  - DRIVE
+  - drive_datasets
+  - data
+  - warthog
+  - wheels
+  - ice
+  - warthog_wheels_ice_2024_7_30_16h30s21_ice_param
+  - config_file_used
+  - _warthog.config.yaml
+  id: warthog_wheels_ice_2024_7_30_16h30s21_ice_param
+  path_2_slip_dataset: /home/wilah/workspace/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/slip_dataset_all.pkl
+  path_2_steady_state_dataset: /home/wilah/workspace/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice_2024_7_30_16h30s21_ice_param/model_training_datasets/steady_state_results.pkl
+  robot: /home/wilah/workspace/ros2
+  roboticist: nicolassamson
+  terrain: datasets/data/warthog/wheels/ice/warthog
   traction: ws/src/DRIVE/drive
 warthog_wheels_ice_ral2023:
   calibration_node_config_file: !!python/object/apply:pathlib.PosixPath

@@ -9,6 +9,7 @@ import pickle
 import shapely
 import pathlib
 import argparse
+import matplotlib.colors as mcolors
 
 DATASET_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
 GEOM_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
@@ -68,23 +69,27 @@ def plot_losange_limits(ax,geom):
 
 def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, filter = {},
                shape = (100,100), colormap = "PuOr", x_lim = (-6,6), y_lim = (-6,6),
-               vmax = 6):
+               vmax = 6, proportionnal = False):
     if ax == None:
         fig, ax = plt.subplots(1,1)
 
     # Change the axis to be log scale
     ax.set_xscale("linear")
     ax.set_yscale("linear")
+    print(f"vmax: {vmax}")
+    norm = mcolors.Normalize(vmin=-vmax, vmax=vmax)
+    if proportionnal:
+        norm = mcolors.LogNorm(vmin=0.1, vmax=vmax)
 
     if isinstance(filter,np.ndarray): 
         filtered_prediction = np.where(filter,mean_prediction.reshape(shape),0)
         
-        im = ax.imshow(filtered_prediction,extent=(x_lim[0], x_lim[1], y_lim[0], y_lim[1]), origin='lower', cmap=colormap, vmin=-vmax, vmax=vmax)
+        im = ax.imshow(filtered_prediction,extent=(x_lim[0], x_lim[1], y_lim[0], y_lim[1]), origin='lower', cmap=colormap, norm=norm)
         #scatter = ax.scatter(X_train[:,0],X_train[:,1],c=y,cmap=colormap,edgecolor='black',vmin=-vmax, vmax=vmax)
         final_shape = int(np.sqrt(mean_prediction.shape[0]))
 
     else:
-        im = ax.imshow(mean_prediction.reshape(shape),extent=(x_lim[0], x_lim[1], y_lim[0], y_lim[1]), origin='lower', cmap=colormap, vmin=-vmax, vmax=vmax)
+        im = ax.imshow(mean_prediction.reshape(shape),extent=(x_lim[0], x_lim[1], y_lim[0], y_lim[1]), origin='lower', cmap=colormap, norm=norm)
         #scatter = ax.scatter(X_train[:,0],X_train[:,1],c=y,cmap=colormap,edgecolor='black',vmin=-vmax, vmax=vmax)
         final_shape = int(np.sqrt(mean_prediction.shape[0]))
 
@@ -94,7 +99,8 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, f
         CS = ax.contour(x_2_eval[:,0].reshape((final_shape,final_shape)),
                 x_2_eval[:,1].reshape((final_shape,final_shape)),
                 mean_prediction.reshape((final_shape,final_shape)),
-                np.linspace(-round_vmax,round_vmax, int((cline_factor*round_vmax)+1)),
+                #np.linspace(-round_vmax,round_vmax, int((cline_factor*round_vmax)+1)),
+                [-0.3, 0, 0.3],
                 colors="black", linewidths=0.5)
         
         ax.clabel(CS, inline=True, fontsize=10)
@@ -159,11 +165,11 @@ def process_data(df, list_col_interest,terrain,geom_to_filter = {},
         if proportionnal:
             # If list_col_interest contains yaw in the name then we need to divide by the angular velocity
             if "yaw" in list_col_interest[i]:
-                data_mean = data_mean/x_2_eval[:,1]
-                data_std = data_std/x_2_eval[:,1]
+                data_mean = abs(data_mean/np.ravel(X_2do))
+                data_std = abs(data_std/np.ravel(X_2do))
             else:
-                data_mean = data_mean/x_2_eval[:,0]
-                data_std = data_std/x_2_eval[:,0]
+                data_mean = abs(data_mean/np.ravel(Y_2do))
+                data_std = abs(data_std/np.ravel(Y_2do))
         list_data_mean.append(data_mean)
         list_data_std.append(data_std)
         list_y.append(y)
@@ -274,9 +280,9 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             data_std = terrain_dict[terrain]["list_data_std"][j]
             y = terrain_dict[terrain]["list_y"][j]
             list_im_mean.append(plot_image(axs_mean_plot[j], X, data_mean, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
-                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_mean[list_colormap[j]]))
+                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_mean[list_colormap[j]], proportionnal = proportionnal))
             list_im_std.append(plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
-                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]]))
+                shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]], proportionnal = proportionnal))
 
         axs_mean_plot[0].set_title(f"{terrain}")
         axs_std_plot[0].set_title(f"{terrain}")

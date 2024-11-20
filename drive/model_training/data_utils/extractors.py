@@ -103,7 +103,7 @@ def column_type_extractor(df, common_type,
     
     
         
-    local_df = extracts_appropriate_columns(local_df,common_type)
+    local_df = extracts_appropriate_columns(pd.DataFrame(local_df),common_type)
 
     np_results = local_df.to_numpy().astype('float')
 
