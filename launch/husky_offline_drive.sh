@@ -13,7 +13,7 @@ fi
 INPUT_FOLDER="$1"
 echo $INPUT_FOLDER
 
-BASENAME="${INPUT_FOLDER:43:-16}"  # Get the base name without extension
+BASENAME="${INPUT_FOLDER:47:-16}"  # Get the base name without extension
 echo $BASENAME
 
 ROSBAG_PATH="$INPUT_FOLDER/${BASENAME}_to_remap"
@@ -53,10 +53,10 @@ EOL
 screen -dmS record ros2 bag record /mapping/icp_odom -o "$ROSBAG_RECORD" -s mcap --use-sim-time
 
 # launch the logger in a screen
-screen -dmS drive_logger ros2 launch drive offline_logger_warthog.launch.py
+screen -dmS drive_logger ros2 launch drive offline_logger_husky.launch.py
 
 # launch the mapping (loc mode) in a screen
-screen -dmS mapping ros2 launch drive offline_mapping.launch.py
+screen -dmS mapping ros2 launch drive husky_offline_mapping.launch.py
 
 # Play the rosbag in the current terminal so we can pipe the service call after it.
 ros2 bag play -r 0.1 "$ROSBAG_PATH" --clock
