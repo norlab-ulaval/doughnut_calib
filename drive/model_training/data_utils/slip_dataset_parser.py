@@ -850,11 +850,17 @@ class SlipDatasetParser:
             dico_2_add["steady_state_mask"+f"_{j}"] = mask_array[:,j]
         
         ## Add acceleration
-        list_col = ["imu_acceleration_x","imu_acceleration_y"] + ["imu_yaw",'cmd_left', 'cmd_right', 'cmd_body_vel_x', 'cmd_body_vel_yaw', 'left_wheel_vel', 'right_wheel_vel', 'step_frame_vx', 'step_frame_vyaw', 'step_frame_vy', 'step_frame_interpolated_icp_x', 'step_frame_interpolated_icp_y', 'step_frame_interpolated_icp_yaw']
+        list_col = ["imu_acceleration_x","imu_acceleration_y"] + ["imu_yaw",'cmd_left', 'cmd_right', 'cmd_body_vel_x', 'cmd_body_vel_yaw', 'left_wheel_vel', 'right_wheel_vel', 'step_frame_vx', 'step_frame_vyaw', 'step_frame_vy', 'step_frame_interpolated_icp_x', 'step_frame_interpolated_icp_y', 'step_frame_interpolated_icp_yaw','init_icp_x' 'init_icp_y' 'init_icp_z']
 
         for col in list_col:
             dico_2_add.update(extract_df_colummn_into_6_sec_dico(df_slip_dataset,col))
-        
+        ## Add transformation tf
+        list_col = ["init_tf_pose_x","init_tf_pose_y","init_tf_pose_yaw", 'init_tf_pose_roll','init_tf_pose_pitch','init_tf_pose_z']
+        for col in list_col:
+            test = df_slip_dataset[col].to_numpy()
+            dico_2_add[col] = test.reshape(test.shape[0]//self.n_windows,self.n_windows)[:,0]
+
+
         #cmd_left_wheel: "cmd_left"
         #cmd_right_wheel: "cmd_right"
         #cmd_body_lin_vel: "cmd_body_vel_x"
@@ -907,3 +913,4 @@ if __name__ =="__main__":
     robot = "warthog"
     traction = "wheels"
     data_parser.create_dataframe_for_diamond_shape_graph(terrain,robot,traction,produce_video_now=False)
+

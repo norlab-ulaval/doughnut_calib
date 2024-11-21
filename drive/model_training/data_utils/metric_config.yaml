@@ -22,7 +22,7 @@ metric:
   SlopeMetric:
     robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
     computation: "mean-steady-state"
-    joule_treshold: 1.0
+    joule_treshold: 0.001
     steady_state_only: True 
     mean_the_steady_state: False
     path_to_save: "drive_datasets/results_multiple_terrain_dataframe/metric/results_slope_metric.csv"
@@ -36,13 +36,39 @@ motion_model:
 
 
 datasets:
-  drive_dataset:
+  drive_dataset_warthog:
     path_dataset: "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_5.0_all_terrain_steady_state_dataset.pkl"
 
     filter_columns_and_values:
       robot: "warthog"
       traction: "wheels"
-      max_linear_speed_sampled: 5.0
+      #max_linear_speed_sampled: 5.0
+
+    columns_names: # The column prefix that is commun to all the column 0-120 of the same type
+      cmd_left_wheel: "cmd_left"
+      cmd_right_wheel: "cmd_right"
+      cmd_body_lin_vel: "cmd_body_vel_x"
+      cmd_body_yaw_vel: "cmd_body_vel_yaw"
+      gt_left_wheel: "left_wheel_vel"
+      gt_right_wheel: "right_wheel_vel"
+      gt_body_lin_vel: "step_frame_vx"
+      gt_body_yaw_vel: "step_frame_vyaw"
+      gt_body_y_vel: "step_frame_vy"
+      gt_step_frame_x: "step_frame_interpolated_icp_x"
+      gt_step_frame_y: "step_frame_interpolated_icp_y"
+      gt_step_frame_yaw: "step_frame_interpolated_icp_yaw"
+    rate: 20
+    format: "n_cmd x horizon"
+    horizon: 6
+    n_steady_state: 40
+
+  drive_dataset_husky:
+    path_dataset: "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_max_lin_speed_all_all_terrain_steady_state_dataset.pkl"
+
+    filter_columns_and_values:
+      robot: "husky"
+      traction: "wheels"
+      #max_linear_speed_sampled: 1.0
 
     columns_names: # The column prefix that is commun to all the column 0-120 of the same type
       cmd_left_wheel: "cmd_left"

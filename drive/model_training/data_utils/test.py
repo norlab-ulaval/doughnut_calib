@@ -1,37 +1,12 @@
-import pathlib 
-import pandas as pd 
-import extractors
+import numpy as np 
+import pandas as pd
+from extractors import *
 import matplotlib.pyplot as plt
-import numpy as np
 
-df = pd.read_pickle("launch/test.pkl")
+df = pd.read_pickle("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_all_terrain_steady_state_dataset.pkl")
 
-extractors.print_column_unique_column(df)
-
-df["right_wheel_current"] = df["right_wheel_current"].astype(float)
-df["left_wheel_current"] = df["left_wheel_current"].astype(float)
-df["left_wheel_voltage"] = df["left_wheel_voltage"].astype(float)
-df["right_wheel_voltage"] = df["right_wheel_voltage"].astype(float)
-
-# Get descriptive statistics
-left_wheel_current_desc = df["left_wheel_current"].describe()
-left_wheel_voltage_desc = df["left_wheel_voltage"].describe()
-right_wheel_voltage_desc = df["right_wheel_voltage"].describe()
-
-# Print the results
-print("Left Wheel Current Description:\n", left_wheel_current_desc)
-print("\nLeft Wheel Voltage Description:\n", left_wheel_voltage_desc)
-print("\nRight Wheel Voltage Description:\n", right_wheel_voltage_desc)
+print_column_unique_column(df)
 
 
-print(np.sqrt(5000/500/0.5))
-
-
-print(np.arange(1,2,0.1))
-
-
-test = np.arange(100)
-
-print(np.clip(test,2,10))
-
-print([np.exp(i) for i in range(7)])
+df.plot("init_tf_pose_x","init_tf_pose_y")
+plt.show()

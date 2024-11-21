@@ -65,7 +65,7 @@ class GraphicProductionDrive():
         mpl.rcParams['lines.linewidth'] = 1.0
 
         self.color_dict = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose",
-                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white","avide2":"white","wetgrass":"honeydew"}
+                        "boreal":"lightgray","sand":"lemonchiffon","avide":"white","avide2":"white","wetgrass":"honeydew","mud":"cornsilk"}
 
         param_path_ = "drive/model_training/data_utils/robot_param.yaml"
         
@@ -1180,8 +1180,6 @@ class GraphicProductionDrive():
             fig.savefig(path_to_save/("body_slip_"+file_name),format="pdf")
             plt.close('all')
             print("fig1 done")
-
-
             fig2 = self.plot_diamond_graph_wheel_slip_heat_map(df,subtitle=title,global_cmap = True,
                                                             y_lim=robot_param["maximum_wheel_speed_empty"],
                                                             x_lim=robot_param["maximum_wheel_speed_empty"])
@@ -1193,7 +1191,6 @@ class GraphicProductionDrive():
             fig3 = self.scatter_diamond_displacement_graph(df,subtitle=title, y_lim=robot_param["maximum_linear_speed"],
                                                         x_lim=robot_param["maximum_angular_speed"],max_wheel_speed=robot_param["maximum_wheel_speed_empty"],
                                                         robot = robot_param_list)
-            
             fig3.savefig(path_to_save/("displacement_diamond_"+file_name),format="pdf")
             plt.close('all')
             print("fig3 done")
@@ -1223,8 +1220,6 @@ def plot_all_unfiltered_data():
     path_to_dataframe_diamond= "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
     path_to_config_file=""
 
-    
-    
     graphic_designer = GraphicProductionDrive(path_to_dataframe_slip,path_to_dataframe_diamond,path_to_config_file="")
     graphic_designer.produce_slip_histogramme_by_roboticist_by_robot(robiticis_specific=True)
     graphic_designer.produce_slip_histogramme_by_roboticist_by_robot(robiticis_specific=False)
@@ -1264,9 +1259,9 @@ if __name__ == "__main__":
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(global_cmap=True)
     #plt.show()
     #
-    plot_all_warthog_filtered_data()
+    #plot_all_warthog_filtered_data()
     #plt.show()
-    #plot_all_unfiltered_data()
+    plot_all_unfiltered_data()
     #fig = graphic_designer.plot_diamond_graph_slip_heat_map(graphic_designer.df_diamond,diff_referential=True)
 
     #fig3 = graphic_designer.scatter_diamond_displacement_graph_diff(graphic_designer.df_diamond,subtitle="")
