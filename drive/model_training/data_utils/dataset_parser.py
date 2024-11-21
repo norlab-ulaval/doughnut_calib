@@ -107,10 +107,22 @@ class DatasetParser:
         self.imu_yaw = run['imu_z'].to_numpy().astype('float')
         self.imu_euler = np.column_stack((self.imu_roll, self.imu_pitch, self.imu_yaw))
 
-        self.imu_acceleration_x = run['imu_acceleration_x'].to_numpy().astype('float')
-        self.imu_acceleration_y = run['imu_acceleration_y'].to_numpy().astype('float')
-        self.imu_acceleration_z = run['imu_acceleration_z'].to_numpy().astype('float')
 
+        if 'imu_acceleration_x' in list(run.columns):
+            self.imu_acceleration_x = run['imu_acceleration_x'].to_numpy().astype('float')
+        else:
+            self.imu_acceleration_x = np.zeros_like(self.imu_pitch)
+
+        if 'imu_acceleration_y' in list(run.columns):
+            self.imu_acceleration_y = run['imu_acceleration_y'].to_numpy().astype('float')
+        else:
+            self.imu_acceleration_y = np.zeros_like(self.imu_pitch)
+        
+        if 'imu_acceleration_z' in list(run.columns):
+            self.imu_acceleration_z = run['imu_acceleration_z'].to_numpy().astype('float')
+        else:
+            self.imu_acceleration_z = np.zeros_like(self.imu_pitch)
+        
         self.icp_quat = np.column_stack((self.icp_quat_x, self.icp_quat_y,
                                     self.icp_quat_z, self.icp_quat_w))
 

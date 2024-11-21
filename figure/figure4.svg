@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (1:1.3.2+202311252150+091e20ef0f)"
+   sodipodi:docname="figure4.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.2526232"
+     inkscape:cx="289.21837"
+     inkscape:cy="396.64868"
+     inkscape:window-width="1920"
+     inkscape:window-height="1163"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="marker10"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Concave triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.7)"
+         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="path10" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ConcaveTriangle"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Concave triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.7)"
+         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="path8" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#000080;fill-opacity:0.321216;stroke:#000080;stroke-width:0.335329"
+       id="rect1-5"
+       width="40.304832"
+       height="21.666414"
+       x="29.724997"
+       y="24.629677" />
+    <rect
+       style="fill:#000080;fill-opacity:0.321216;stroke:#000080;stroke-width:0.335329"
+       id="rect1-5-8"
+       width="40.304832"
+       height="21.666414"
+       x="63.349697"
+       y="115.52975" />
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:times;-inkscape-font-specification:times;fill:#000000;fill-opacity:0.321216;stroke:#000000;stroke-width:0.4"
+       x="49.845657"
+       y="33.630909"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="text-align:center;text-anchor:middle;fill:#000000;stroke:#000000;stroke-width:0.4"
+         x="49.845657"
+         y="33.630909">No-load </tspan><tspan
+         sodipodi:role="line"
+         style="text-align:center;text-anchor:middle;fill:#000000;stroke:#000000;stroke-width:0.4"
+         x="49.845657"
+         y="41.568409"
+         id="tspan2">calibration</tspan></text>
+    <g
+       id="g5">
+      <rect
+         style="opacity:1;fill:#ff6600;fill-opacity:0.321216;stroke:#ff6600;stroke-width:0.355878"
+         id="rect1"
+         width="42.263947"
+         height="23.271902"
+         x="87.250504"
+         y="24.070648" />
+      <text
+         xml:space="preserve"
+         style="font-size:6.35px;font-family:times;-inkscape-font-specification:times;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:0.321216;stroke:#000000;stroke-width:0.4"
+         x="109.13177"
+         y="33.874626"
+         id="text3"><tspan
+           sodipodi:role="line"
+           style="stroke-width:0.4"
+           x="109.13177"
+           y="33.874626"
+           id="tspan4">User defined </tspan><tspan
+           sodipodi:role="line"
+           style="stroke-width:0.4"
+           x="109.13177"
+           y="41.812122"
+           id="tspan5">limits</tspan></text>
+    </g>
+    <path
+       style="opacity:1;fill:#000000;fill-opacity:0.321216;stroke:#000000;stroke-width:0.4"
+       d="M 64.240904,72.217792 H 101.07335 L 82.916751,98.840531 Z"
+       id="path6"
+       sodipodi:nodetypes="cccc" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.240782px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="M 102.77915,47.323366 92.196672,70.637376"
+       id="path7"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.236718px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker10)"
+       d="m 56.504046,46.267261 13.561442,24.2345"
+       id="path9"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:times;-inkscape-font-specification:times;text-align:center;text-anchor:middle;opacity:1;fill:#000000;fill-opacity:0.321216;stroke:#000000;stroke-width:0.4"
+       x="48.023308"
+       y="59.22105"
+       id="text10"><tspan
+         sodipodi:role="line"
+         id="tspan10"
+         style="stroke-width:0.4"
+         x="48.023308"
+         y="59.22105">Maximum </tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.4"
+         x="48.023308"
+         y="67.158546"
+         id="tspan11">wheel speed</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:times;-inkscape-font-specification:times;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:0.321216;stroke:#000000;stroke-width:0.4"
+       x="115.13146"
+       y="58.530922"
+       id="text10-6"><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.4"
+         x="115.13146"
+         y="58.530922"
+         id="tspan11-6">Maximum </tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.4"
+         x="115.13146"
+         y="66.468422"
+         id="tspan12">body-speed</tspan></text>
+  </g>
+</svg>
