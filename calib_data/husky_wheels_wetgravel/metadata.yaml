@@ -1,0 +1,10 @@
+metadata:
+  robot: husky
+  traction: wheels
+  terrain: wetgravel
+  weather: nocloud_night
+  tire_pressure_psi: 10.899999618530273
+only_execute_trajectories: false
+descriptions of the experiments: after rain and a sunny day we went to the gravel
+  pit with husky
+path_to_the_experiment_folder_that_contains_the_stolen_parameters: ''

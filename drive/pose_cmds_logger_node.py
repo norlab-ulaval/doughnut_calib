@@ -293,8 +293,8 @@ class LoggerNode(Node):
         self.velocity_right_meas = msg
 
     def wheel_velocity_meas_callback(self, joinstate_data):
-        self.left_wheel_msg = Float64(data= joinstate_data.velocity[self.left_wheel_encoder_velocity_index])
-        self.right_wheel_msg = Float64(data= joinstate_data.velocity[self.right_wheel_encoder_velocity_index])
+        self.velocity_left_meas = Float64(data= joinstate_data.velocity[self.left_wheel_encoder_velocity_index])
+        self.velocity_right_meas = Float64(data= joinstate_data.velocity[self.right_wheel_encoder_velocity_index])
     
 
     def imu_callback(self, msg):

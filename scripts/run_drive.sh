@@ -61,6 +61,7 @@ screen -dmS records ros2 launch norlab_robot rosbag_record.launch.py config:=dri
 sleep 2
 
 
+
 #
 #
 #

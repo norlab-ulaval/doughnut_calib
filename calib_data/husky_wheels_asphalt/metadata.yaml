@@ -1,0 +1,9 @@
+metadata:
+  robot: husky
+  traction: wheels
+  terrain: asphalt
+  weather: littlelittlesnow
+  tire_pressure_psi: 10.899999618530273
+only_execute_trajectories: false
+descriptions of the experiments: nightishabout0degreees200stepshusky
+path_to_the_experiment_folder_that_contains_the_stolen_parameters: ''

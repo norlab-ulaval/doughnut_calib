@@ -1,0 +1,9 @@
+metadata:
+  robot: husky
+  traction: wheels
+  terrain: test
+  weather: test
+  tire_pressure_psi: 5.0
+only_execute_trajectories: false
+descriptions of the experiments: test
+path_to_the_experiment_folder_that_contains_the_stolen_parameters: ''

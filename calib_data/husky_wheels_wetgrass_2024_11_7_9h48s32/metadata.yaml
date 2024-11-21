@@ -1,0 +1,10 @@
+metadata:
+  robot: husky
+  traction: wheels
+  terrain: wetgrass
+  weather: sunny
+  tire_pressure_psi: 10.899999618530273
+only_execute_trajectories: false
+descriptions of the experiments: 50 steps more (sunny with clouds) with husky on wet
+  grass part2
+path_to_the_experiment_folder_that_contains_the_stolen_parameters: ''

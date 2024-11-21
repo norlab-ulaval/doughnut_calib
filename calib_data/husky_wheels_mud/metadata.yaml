@@ -1,0 +1,10 @@
+metadata:
+  robot: husky
+  traction: wheels
+  terrain: mud
+  weather: sunny, windy
+  tire_pressure_psi: 10.899999618530273
+only_execute_trajectories: false
+descriptions of the experiments: husky on mud with friends part 1. 200 steps. filmed
+  by drone
+path_to_the_experiment_folder_that_contains_the_stolen_parameters: ''
