@@ -7,7 +7,7 @@ terrain_to_skip:
   #- ice
   #- asphalt
 robot_to_skip:
-  - noskip
-  #- husky
-  #- marmotte
+  #- noskip
+  - husky
+  - marmotte
   #- warthog

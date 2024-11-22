@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import yaml
 
-TERRAIN_TO_PLOT = ["ice", "grass"]
+TERRAIN_TO_PLOT = ["ice", "grass", "sand", "asphalt", "gravel"]
 
 ROBOT_PARAMS_PER_TERRAIN = {"asphalt":  [1.08, 0.3, 5, 5, 16.6667],
                             "ice":      [1.08, 0.3, 5, 4, 16.6667],
@@ -234,19 +234,6 @@ def scatter_diamond_displacement_graph(df_all_terrain, terrains_to_plot = [],
             df = df_all_terrain.loc[df_all_terrain["terrain"]==terrain]
             robot_params = robot[terrain]
 
-            if "Body_vel" in list_of_plot_to_do:
-                axs[k,i].set_title(f"Body vel on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
-                axs[k,i].scatter(df["cmd_body_yaw_lwmean"],df["cmd_body_x_lwmean"],color = "orange",label='Command',alpha=alpha_parama)
-                axs[k,i].scatter(df["icp_vel_yaw_smoothed"],df["icp_vel_x_smoothed"],color = "blue",label='Mean of body steady-state speed',alpha=alpha_parama) 
-                axs[k,i].set_facecolor(COLOR_DICT[terrain])        
-                axs[k,i].set_xlabel("Angular velocity (omega) [rad/s]")
-                axs[k,i].set_ylabel("Forward velocity (V_x) [m/s]")
-                axs[k,i].set_ylim((-y_lim,y_lim))
-                axs[k,i].set_xlim((-x_lim,x_lim))
-                add_small_turning_radius_background(axs[k,i],robot=robot_params)
-                list_of_plot_to_do.remove("Body_vel")
-                continue
-        
             if "Wheels_vel" in list_of_plot_to_do:
                 axs[k,i].scatter(df["cmd_right_wheels"],df["cmd_left_wheels"],color="orange",alpha=alpha_parama)
                 axs[k,i].scatter(df["odom_speed_right_wheels"],df["odom_speed_left_wheels"],label='Mean of wheel steady-state speed',color="green",alpha=alpha_parama)
@@ -267,6 +254,19 @@ def scatter_diamond_displacement_graph(df_all_terrain, terrains_to_plot = [],
                     axs[k,i] = add_vehicle_limits_to_wheel_speed_graph(axs[k,i],robot=robot_params)
                 
                 list_of_plot_to_do.remove("Wheels_vel")
+                continue
+
+            if "Body_vel" in list_of_plot_to_do:
+                axs[k,i].set_title(f"Body vel on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+                axs[k,i].scatter(df["cmd_body_yaw_lwmean"],df["cmd_body_x_lwmean"],color = "orange",label='Command',alpha=alpha_parama)
+                axs[k,i].scatter(df["icp_vel_yaw_smoothed"],df["icp_vel_x_smoothed"],color = "blue",label='Mean of body steady-state speed',alpha=alpha_parama) 
+                axs[k,i].set_facecolor(COLOR_DICT[terrain])        
+                axs[k,i].set_xlabel("Angular velocity (omega) [rad/s]")
+                axs[k,i].set_ylabel("Forward velocity (V_x) [m/s]")
+                axs[k,i].set_ylim((-y_lim,y_lim))
+                axs[k,i].set_xlim((-x_lim,x_lim))
+                add_small_turning_radius_background(axs[k,i],robot=robot_params)
+                list_of_plot_to_do.remove("Body_vel")
                 continue
     
     return fig, axs

@@ -1,19 +1,28 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+from matplotlib.colors import Normalize
 from scipy.spatial.transform import Rotation as R
 import os
 
 NBR_STEPS = 120
 TIME_DELTA = 0.05
 PATH_DATAFRAME = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
-INDEX_LIST_TO_PLOT = [2, 3, 12, 20, 25, 30, 35, 41, 47, 122]
+#INDEX_LIST_TO_PLOT = [2, 3, 12, 20, 25, 30, 35, 41, 47, 122]
+INDEX_LIST_TO_PLOT = [i for i in range(200)]
 # Create a list of colors to plot the paths of the robot from the inferno colormap of equal length to the index list
 COLOR_LIST_TO_PLOT = plt.cm.inferno(np.linspace(0, 1, len(INDEX_LIST_TO_PLOT)))
 RANGE_LIMIT = 20
+CONSIDER_INIT_TF = True
+ROBOT_WIDTH = 2.0
+HEATMAP_ABSOLUTE = True
+TERRAIN_COLOR_DICT = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayawhip","grass":"honeydew","tile":"mistyrose",
+                    "boreal":"lightgray","sand":"lemonchiffon","avide":"white","avide2":"white","wetgrass":"honeydew","mud":"cornsilk"}
 
 class Command:
     def __init__(self, cmd_vel, cmd_angle, delta_s, step_nb, initial_pose=[0.0, 0.0, 0.0]):
+        # initial pose is [x, y, yaw]
         self.cmd_vel = cmd_vel
         self.cmd_angle = cmd_angle
         self.delta_s = delta_s
@@ -27,7 +36,8 @@ class Command:
         self.cmd_matrix[1, 0] = np.sin(delta_z_dot)
         self.cmd_matrix[1, 1] = np.cos(delta_z_dot)
         self.cmd_matrix[0, 2] = delta_x
-        self.initial_pose = np.array(initial_pose)
+        self.initial_pose = initial_pose
+        self.initial_transform = np.array([[np.cos(initial_pose[2]), -np.sin(initial_pose[2]), initial_pose[0]], [np.sin(initial_pose[2]), np.cos(initial_pose[2]), initial_pose[1]], [0.0, 0.0, 1.0]])
 
 
 def extracts_appropriate_columns(df,commun_name):
@@ -86,7 +96,7 @@ def column_type_extractor(df, common_type,
 
 def process_path(cmd : Command):
     planned_path = []
-    matrice_pose_init = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    matrice_pose_init = cmd.initial_transform
     for i in range (cmd.step_nb):
         matrice_pose_init = matrice_pose_init @ cmd.cmd_matrix
         theta_z = np.arctan2(matrice_pose_init[1, 0], matrice_pose_init[0, 0])
@@ -96,29 +106,48 @@ def process_path(cmd : Command):
 
 
 def setup_axis(ax, limits):
-    ax.set_xlabel("y (m)")
-    ax.set_ylabel("x (m)")
-    ax.set_xlim(limits, -limits)
-    ax.set_ylim(-limits, limits)
+    ax.set_xlabel("y [m]")
+    ax.set_ylabel("x [m]")
+    if limits is not None:
+        ax.set_xlim(limits, -limits)
+        ax.set_ylim(-limits, limits)
     ax.set_aspect('equal')
 
 
-def draw_path(ax, limits, path, color='b'):
+def draw_path(ax, limits, path, point_size=1, color='b', alpha=0.2, downsample=1, quiver=False, label='Robot pose'):
     setup_axis(ax, limits)
     path = np.array(path)
-    # Plot the positions of the robot as a scatter plot
-    #ax.scatter(path[:, 1], path[:, 0], color=color, label='Robot position')
     # Find the u,v vectors of the orientation using the yaw angle
     u = np.cos(path[:, 2])
     v = np.sin(path[:, 2])
     # Plot the orientation of the robot as a quiver plot with only 1 point out of 10
-    ax.quiver(path[::10, 1], path[::10, 0], v[::10], u[::10], angles='xy', scale_units='xy', scale=1, color=color, label='Robot pose')
+    if quiver:
+        im = ax.quiver(path[::downsample, 1], path[::downsample, 0], v[::downsample], u[::downsample], angles='xy', scale_units='xy', scale=1, color=color, label=label)
+    else:
+        im = ax.scatter(path[::downsample, 1], path[::downsample, 0], color=color, s=point_size, alpha=alpha, label=label)
+
+    return im
 
 
-def draw_path_from_command(ax, limits, cmd, color='r'):
+def draw_path_from_command(ax, limits, cmd, point_size=1, color='b', alpha=0.2, downsample=1, quiver=False, label='Robot pose'):
     planned_path = process_path(cmd)
     planned_path = np.array(planned_path)
-    draw_path(ax, limits, planned_path, color)
+    return draw_path(ax, limits, planned_path, point_size, color, alpha, downsample, quiver, label)
+
+
+def update_path_with_init_tf(path_list, init_tf):
+    # init_tf = [x, y, yaw]
+    # Create the transformation matrix
+    init_tf_matrix = np.array([[np.cos(init_tf[2]), -np.sin(init_tf[2]), init_tf[0]], [np.sin(init_tf[2]), np.cos(init_tf[2]), init_tf[1]], [0.0, 0.0, 1.0]])
+    updated_path_matrix = []
+    for path in path_list:
+        # Path is a list of [x, y, yaw]
+        path_matrix = np.array([[np.cos(path[2]), -np.sin(path[2]), path[0]], [np.sin(path[2]), np.cos(path[2]), path[1]], [0.0, 0.0, 1.0]])
+        # Multiply the path matrix by the init_tf matrix
+        updated_matrix = init_tf_matrix @ path_matrix
+        updated_path_matrix.append([updated_matrix[0, 2], updated_matrix[1, 2], np.arctan2(updated_matrix[1, 0], updated_matrix[0, 0])])
+    # Return the updated path as a list of [x, y, yaw]
+    return updated_path_matrix
 
 
 def extract_data_from_dataframe(df):
@@ -135,153 +164,303 @@ def extract_data_from_dataframe(df):
     return data_dict
 
 
-def plot_dataframe(df, range_limit=RANGE_LIMIT):
-    # Find every terrain in the dataframe
-    terrains = df['terrain'].unique()
-    for terrain in terrains:
-        # Create a subfolder for the terrain if it does not exist with all the subfolders
-        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
-        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
-        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
-        # Filter the dataframe to keep only the rows corresponding to the current terrain
-        df_terrain = df[df['terrain'] == terrain]
-        # Read the number of rows in the dataframe to get the number of commands
-        cmd_nbr = df_terrain.shape[0]
-
-        # Get the required data from the dataframe
-        data_dict = extract_data_from_dataframe(df_terrain)
-
-        # Final figures for the planned and executed paths
-        fig_final, axs_final = plt.subplots(1, 2)
-
-        # Loop over the rows of the dataframe
-        for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
-            # Create a figure for the planned path
-            fig_cmd, axs_cmd = plt.subplots(1, 1)
-            # Create a figure for the executed path
-            fig_icp, axs_icp = plt.subplots(1, 1)
-            # Get the command from the dataframe
-            cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS)
-            # Draw the path of the robot
-            draw_path_from_command(axs_cmd, range_limit, cmd)
-            axs_cmd.set_title(f"Command: {cmd_vel} m/s, {cmd_angle} rad/s")
-            # Draw the path of the robot from the ICP data
-            draw_path(axs_icp, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T)
-            axs_icp.set_title(f"Command: {cmd_vel} m/s, {cmd_angle} rad/s")
-
-            fig_combined, axs_combined = plt.subplots(1, 1)
-            draw_path_from_command(axs_combined, range_limit, cmd, color='r')
-            draw_path(axs_combined, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color='b')
-            axs_combined.set_title(f"Command: {cmd_vel} m/s, {cmd_angle} rad/s")
-
-            # Increase the spacing between the subplots
-            fig_cmd.tight_layout()
-            fig_icp.tight_layout()
-            fig_combined.tight_layout()
-            # Save the figure
-            fig_cmd.savefig(f"tests_figures/{terrain}/planned_path/{i}.png")
-            fig_icp.savefig(f"tests_figures/{terrain}/executed_path/{i}.png")
-            fig_combined.savefig(f"tests_figures/{terrain}/combined_path/{i}.png")
-
-            if i in INDEX_LIST_TO_PLOT:
-                # Plot the planned path
-                draw_path_from_command(axs_final[0], range_limit, cmd, color=COLOR_LIST_TO_PLOT[INDEX_LIST_TO_PLOT.index(i)])
-                draw_path(axs_final[1], range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=COLOR_LIST_TO_PLOT[INDEX_LIST_TO_PLOT.index(i)])
-                fig_final.tight_layout()
-
-        # Save the final figures
-        axs_final[0].set_title("Planned paths")
-        axs_final[1].set_title("Executed paths")
-        # Remove the axis labels for the combined figure
-        axs_final[1].set_ylabel("")
-        # Save the final figure with high resolution
-        fig_final.savefig(f"tests_figures/{terrain}/planned_paths.pdf", format='pdf', dpi=600)
-
-
-def plot_relevant_paths(df, range_limit=RANGE_LIMIT):
-    # Find every terrain in the dataframe
-    terrains = df['terrain'].unique()
-    for terrain in terrains:
-        # Create a subfolder for the terrain if it does not exist with all the subfolders
-        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
-        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
-        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
-        # Filter the dataframe to keep only the rows corresponding to the current terrain
-        df_terrain = df[df['terrain'] == terrain]
-        
-        # Get the required data from the dataframe
-        data_dict = extract_data_from_dataframe(df_terrain)
-
-        # Final figures for the planned and executed paths
-        fig_final, axs_final = plt.subplots(1, 2)
-
-        for i in INDEX_LIST_TO_PLOT:
-            # Get the command from the dataframe
-            cmd = Command(data_dict["cmd_vel_x"][i], data_dict["cmd_vel_yaw"][i], TIME_DELTA, NBR_STEPS)
-
-            # Plot the planned path
-            draw_path_from_command(axs_final[0], range_limit, cmd, color=COLOR_LIST_TO_PLOT[INDEX_LIST_TO_PLOT.index(i)])
-            draw_path(axs_final[1], range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=COLOR_LIST_TO_PLOT[INDEX_LIST_TO_PLOT.index(i)])
-            fig_final.tight_layout()
-
-        # Add the title to the final figure
-        axs_final[0].set_title("Planned paths")
-        axs_final[1].set_title("Executed paths")
-        # Save the final figure with high resolution
-        fig_final.savefig(f"tests_figures/{terrain}/planned_vs_executed_paths.pdf", format='pdf', dpi=600)
-
-
-def plot_heatmap_world_position(df, range_limit=RANGE_LIMIT):
-    # Find every terrain in the dataframe
-    terrains = df['terrain'].unique()
-    for terrain in terrains:
-        # Create a subfolder for the terrain if it does not exist with all the subfolders
-        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
-        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
-        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
-        # Filter the dataframe to keep only the rows corresponding to the current terrain
-        df_terrain = df[df['terrain'] == terrain]
-
-        # Read the number of rows in the dataframe to get the number of commands
-        cmd_nbr = df_terrain.shape[0]
-
-        # Get the required data from the dataframe
-        data_dict = extract_data_from_dataframe(df_terrain)
-
-        # Final figures for the planned and executed paths
-        fig_final, axs_final = plt.subplots(1, 2)
-
-        # Loop over the rows of the dataframe
-        for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
-            # Get the command from the dataframe
-            cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
-            
+def generate_heatmap_from_path(ax, path, range_limit=RANGE_LIMIT, cmap='inferno', vmax=None):
+    bins = int((range_limit * 2) / ROBOT_WIDTH)
+    if vmax is None:
+        counts =ax.hist2d(path[:, 1], path[:, 0], bins=bins, cmap=cmap, 
+                range=[[-range_limit, range_limit], [-range_limit, range_limit]], cmin=1)
+    else:
+        counts =ax.hist2d(path[:, 1], path[:, 0], bins=bins, cmap=cmap, 
+                range=[[-range_limit, range_limit], [-range_limit, range_limit]], vmax=vmax, cmin=1)
+    setup_axis(ax, None)
+    # Add a colorbar to the heatmap
+    #cbar = plt.colorbar(ax.collections[0], ax=ax)
+    #cbar.set_label('Number of points')
+    # Compute the mean, median and standard deviation of the number of points in each bin
+    mean = np.nanmean(counts[0])
+    median = np.nanmedian(counts[0])
+    std = np.nanstd(counts[0])
+    print(f"Mean: {mean}, Median: {median}, Std: {std}")
     return
 
-### Test the functions
-cmd_vel = 0.0
-cmd_angle = 5.0
-delta_s = TIME_DELTA
-step_nb = 120
-cmd = Command(cmd_vel, cmd_angle, delta_s, step_nb)
-fig, ax = plt.subplots()    
-draw_path_from_command(ax, 30, cmd)
-plt.savefig("tests_figures/planned_path_single.png")
+
+def overlap_planned_vs_executed(df, range_limit=RANGE_LIMIT, consider_init_tf=True):
+    # Find every terrain in the dataframe
+    terrains = df['terrain'].unique()
+    for terrain in terrains:
+        print("Terrain: ", terrain)
+        # Create a subfolder for the terrain if it does not exist with all the subfolders
+        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
+        # Filter the dataframe to keep only the rows corresponding to the current terrain
+        df_terrain = df[df['terrain'] == terrain]
+
+        # Read the number of rows in the dataframe to get the number of commands
+        cmd_nbr = df_terrain.shape[0]
+        color_planned = 'orange'
+        color_executed = 'blue'
+
+        # Get the required data from the dataframe
+        data_dict = extract_data_from_dataframe(df_terrain)
+
+        # Final figures for the planned and executed paths
+        fig_final, axs_final = plt.subplots(1, 1)
+
+        # Loop over the rows of the dataframe
+        for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
+            # Get the command from the dataframe
+            if consider_init_tf:
+                cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+                draw_path_from_command(axs_final, range_limit, cmd, color=color_planned, label='Planned path')
+                path_raw = np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T
+                path_with_init_tf = update_path_with_init_tf(path_raw, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+                draw_path(axs_final, range_limit, path_with_init_tf, color=color_executed, label='Executed path')
+            else:
+                cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS)
+                draw_path_from_command(axs_final[0], range_limit, cmd, color=color_planned, label='Planned path')
+                draw_path(axs_final, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=color_executed, label='Executed path')
+            
+        fig_final.tight_layout()
+            
+        # Add a custom legend where blue is executed and orange is planned
+        fig_final.legend(['Planned path', 'Executed path'], loc='upper right')
+        # Save the final figure with high resolution
+        fig_final.savefig(f"tests_figures/{terrain}/planned_vs_executed_paths_with_init_tf_overlap.pdf", format='pdf', dpi=600)
+    return
+
+
+def plot_with_and_without_tf(df, range_limit=RANGE_LIMIT):
+    # Find every terrain in the dataframe
+    terrains = df['terrain'].unique()
+    for terrain in terrains:
+        print("Terrain: ", terrain)
+        # Create a subfolder for the terrain if it does not exist with all the subfolders
+        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
+        # Filter the dataframe to keep only the rows corresponding to the current terrain
+        df_terrain = df[df['terrain'] == terrain]
+
+        # Read the number of rows in the dataframe to get the number of commands
+        cmd_nbr = df_terrain.shape[0]
+        colormap_planned = plt.cm.inferno(np.linspace(0, 1, cmd_nbr))
+        colormap_executed = plt.cm.viridis(np.linspace(0, 1, cmd_nbr))
+
+        # Get the required data from the dataframe
+        data_dict = extract_data_from_dataframe(df_terrain)
+
+        # Final figures for the planned and executed paths
+        fig_final, axs_final = plt.subplots(2, 2)
+
+        # Loop over the rows of the dataframe
+        for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
+            cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS)
+            draw_path_from_command(axs_final[0][0], range_limit, cmd, color=colormap_planned[i])
+            draw_path(axs_final[0][1], range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=colormap_executed[i])
+
+            # Get the command from the dataframe
+            cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+            draw_path_from_command(axs_final[1][0], range_limit, cmd, color=colormap_planned[i])
+            path_raw = np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T
+            path_with_init_tf = update_path_with_init_tf(path_raw, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+            draw_path(axs_final[1][1], range_limit, path_with_init_tf, color=colormap_executed[i])
+
+        fig_final.tight_layout()
+            
+        # Add the title to the final figure
+        axs_final[0][0].set_title("Planned paths")
+        axs_final[0][1].set_title("Executed paths")
+        # Remove the axis labels for the combined figure
+        axs_final[0][1].set_ylabel("")
+        axs_final[1][1].set_ylabel("")
+        axs_final[0][1].set_xlabel("")
+        axs_final[0][0].set_xlabel("")
+        # Save the final figure with high resolution
+        fig_final.savefig(f"tests_figures/{terrain}/planned_vs_executed_paths_with_and_without_init_tf.pdf", format='pdf', dpi=600)
+    return
+
+
+def test_heatmap(df, range_limit=RANGE_LIMIT, absolute=True):
+    # Find every terrain in the dataframe
+    terrains = df['terrain'].unique()
+    for terrain in terrains:
+        print("Terrain: ", terrain)
+        # Create a subfolder for the terrain if it does not exist with all the subfolders
+        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
+        # Filter the dataframe to keep only the rows corresponding to the current terrain
+        df_terrain = df[df['terrain'] == terrain]
+        # Read the number of rows in the dataframe to get the number of commands
+        cmd_nbr = df_terrain.shape[0]
+        # Create a figure for the heatmap
+        fig_heatmap_capped, axs_heatmap_capped = plt.subplots(1, 1)
+        fig_heatmap_uncapped, axs_heatmap_uncapped = plt.subplots(1, 1)
+        # Get the required data from the dataframe
+        data_dict = extract_data_from_dataframe(df_terrain)
+        x_pos_list = []
+        y_pos_list = []
+        x_bin_list = []
+        y_bin_list = []
+        for i in range(cmd_nbr):
+            cmd = Command(data_dict["cmd_vel_x"][i], data_dict["cmd_vel_yaw"][i], TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+            planned_path = process_path(cmd)
+            planned_path = np.array(planned_path)
+            if absolute:
+                x_pos_list.append(planned_path[:, 0])
+                y_pos_list.append(planned_path[:, 1])
+            else:
+                x_pos_list.append([])
+                y_pos_list.append([])
+                x_bin_list.append([])
+                y_bin_list.append([])
+                # Compute the bin that each point belongs to
+                bins = int((range_limit * 2) / ROBOT_WIDTH)
+                x_pos = np.digitize(planned_path[:, 0], np.linspace(-range_limit, range_limit, bins+1))
+                y_pos = np.digitize(planned_path[:, 1], np.linspace(-range_limit, range_limit, bins+1))
+                # Add the x and y positions to the list if there is not already a point at that position
+                for pos in range(len(x_pos)):
+                    if ((x_pos[pos],y_pos[pos]) in list(zip(x_bin_list[i], y_bin_list[i]))):
+                        continue
+                    else:
+                        x_pos_list[i].append(planned_path[pos, 0])
+                        y_pos_list[i].append(planned_path[pos, 1])
+                        x_bin_list[i].append(x_pos[pos])
+                        y_bin_list[i].append(y_pos[pos])
+
+        x_pos = np.concatenate(x_pos_list)
+        y_pos = np.concatenate(y_pos_list)
+        planned_path = np.array([x_pos, y_pos]).T
+        generate_heatmap_from_path(axs_heatmap_capped, planned_path, range_limit=range_limit, cmap='inferno', vmax=200)
+        generate_heatmap_from_path(axs_heatmap_uncapped, planned_path, range_limit=range_limit, cmap='inferno')
+
+        # Add the title to the final figure
+        axs_heatmap_capped.set_title("Planned path heatmap capped")
+        axs_heatmap_uncapped.set_title("Planned path heatmap uncapped")
+        # Save the final figure with high resolution
+        fig_heatmap_capped.savefig(f"tests_figures/{terrain}/heatmap_planned_capped.pdf", format='pdf', dpi=600)
+        fig_heatmap_uncapped.savefig(f"tests_figures/{terrain}/heatmap_planned_uncapped.pdf", format='pdf', dpi=600)
+    return
+
+
+def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
+    plt.rcParams['text.usetex'] = True
+    plt.rcParams['font.family'] = 'serif'  # Use a LaTeX-compatible font
+    terrains = df['terrain'].unique()
+    for terrain in terrains:
+        print("Terrain: ", terrain)
+        # Create a subfolder for the terrain if it does not exist with all the subfolders
+        os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/executed_path", exist_ok=True)
+        os.makedirs(f"tests_figures/{terrain}/combined_path", exist_ok=True)
+        # Filter the dataframe to keep only the rows corresponding to the current terrain
+        df_terrain = df[df['terrain'] == terrain]
+        # Read the number of rows in the dataframe to get the number of commands
+        cmd_nbr = df_terrain.shape[0]
+        colormap_planned = plt.cm.viridis(np.linspace(0, 1, cmd_nbr))
+        colormap_executed = plt.cm.viridis(np.linspace(0, 1, cmd_nbr))
+        # Create a figure for the heatmap
+        fig = plt.figure(figsize=(88/25.4, 92/25.4))
+        b_u_ax = fig.add_axes((0.05, 0.62, 0.53, 0.30))
+        b_p_ax = fig.add_axes((0.48, 0.62, 0.53, 0.30))
+        g_p_ax = fig.add_axes((0.05, 0.16, 0.53, 0.30))
+        g_p_heatmap_ax = fig.add_axes((0.48, 0.16, 0.53, 0.30))
+        # Get the required data from the dataframe
+        data_dict = extract_data_from_dataframe(df_terrain)
+        x_pos_list = []
+        y_pos_list = []
+        x_bin_list = []
+        y_bin_list = []
+        max_value = 0
+        # Loop over the rows of the dataframe
+        for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
+            cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS)
+            im_b_u = draw_path_from_command(b_u_ax, range_limit, cmd, color=colormap_planned[i])
+            im_b_p = draw_path(b_p_ax, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=colormap_executed[i])
+
+            cmd = Command(data_dict["cmd_vel_x"][i], data_dict["cmd_vel_yaw"][i], TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+            path_raw = np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T
+            path_with_init_tf = update_path_with_init_tf(path_raw, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+            draw_path(g_p_ax, None, path_with_init_tf, color=colormap_executed[i])
+
+            planned_path = np.array(path_with_init_tf)
+            max_value = max([np.max(planned_path[:, 0]), np.max(planned_path[:, 1]), max_value])
+            if absolute:
+                x_pos_list.append(planned_path[:, 0])
+                y_pos_list.append(planned_path[:, 1])
+            else:
+                x_pos_list.append([])
+                y_pos_list.append([])
+                x_bin_list.append([])
+                y_bin_list.append([])
+                # Compute the bin that each point belongs to
+                bins = int((max_value * 2) / ROBOT_WIDTH)
+                x_pos = np.digitize(planned_path[:, 0], np.linspace(-max_value, max_value, bins+1))
+                y_pos = np.digitize(planned_path[:, 1], np.linspace(-max_value, max_value, bins+1))
+                # Add the x and y positions to the list if there is not already a point at that position
+                for pos in range(len(x_pos)):
+                    if ((x_pos[pos],y_pos[pos]) in list(zip(x_bin_list[i], y_bin_list[i]))):
+                        continue
+                    else:
+                        x_pos_list[i].append(planned_path[pos, 0])
+                        y_pos_list[i].append(planned_path[pos, 1])
+                        x_bin_list[i].append(x_pos[pos])
+                        y_bin_list[i].append(y_pos[pos])
+
+        x_pos = np.concatenate(x_pos_list)
+        y_pos = np.concatenate(y_pos_list)
+        planned_path = np.array([x_pos, y_pos]).T
+        generate_heatmap_from_path(g_p_heatmap_ax, planned_path, range_limit=max_value, cmap='inferno')
+        g_p_ax.set_xlim(-max_value, max_value)
+        g_p_ax.set_ylim(-max_value, max_value)
+
+        fontsize_label = 8
+        labelpad = -0.5
+        # Remove the axis labels for the combined figure
+        b_u_ax.set_xlabel(r"${}^{\mathcal{B}}y$ [m]", fontsize=fontsize_label, labelpad=labelpad)
+        b_u_ax.set_ylabel(r"${}^{\mathcal{B}}x$ [m]", fontsize=fontsize_label, labelpad=labelpad)
+        b_p_ax.set_xlabel(r"${}^{\mathcal{B}}y$ [m]", fontsize=fontsize_label, labelpad=labelpad)
+        b_p_ax.set_ylabel(r"", fontsize=fontsize_label, labelpad=labelpad)
+        g_p_ax.set_xlabel(r"${}^{\mathcal{G}}x$ [m]", fontsize=fontsize_label, labelpad=labelpad)
+        g_p_ax.set_ylabel(r"${}^{\mathcal{G}}y$ [m]", fontsize=fontsize_label, labelpad=labelpad)
+        g_p_heatmap_ax.set_xlabel(r"${}^{\mathcal{G}}x$ [m]", fontsize=fontsize_label, labelpad=labelpad)
+        g_p_heatmap_ax.set_ylabel(r"", fontsize=fontsize_label, labelpad=labelpad)
+        
+        #axs[0].set_title(r'${}^{\mathcal{B}}$')
+        b_u_ax.set_title(r'${}^{\mathcal{B}} f(\mathbf{u_\tau})$')
+        b_p_ax.set_title(r'${}^{\mathcal{B}} \mathbf{p_\tau}$')
+        g_p_ax.set_title(r'${}^{\mathcal{G}} \mathbf{p_\tau}$')
+        g_p_heatmap_ax.set_title(r'${}^{\mathcal{G}} \mathbf{p_\tau}$ density')
+        # Set the background color according to the terrain
+        for ax in [b_u_ax, b_p_ax, g_p_ax, g_p_heatmap_ax]:
+            ax.set_facecolor(TERRAIN_COLOR_DICT[terrain])
+        # Add colorbar to the center bottom of the whole figure
+        cbar_cmd_ax = fig.add_axes((0.05, 0.05, 0.40, 0.02))
+        norm = Normalize(vmin=0, vmax=cmd_nbr)
+        sm = plt.cm.ScalarMappable(norm=norm, cmap=plt.cm.viridis)
+        cbar_cmd = fig.colorbar(sm, cax=cbar_cmd_ax, orientation='horizontal')
+        cbar_heatmap_ax = fig.add_axes((0.55, 0.05, 0.40, 0.02))
+        cbar_heatmap = fig.colorbar(g_p_heatmap_ax.collections[0], cax=cbar_heatmap_ax, orientation='horizontal')
+        cbar_cmd.set_label('Command iteration' , fontsize=fontsize_label)
+        cbar_heatmap.set_label('Number of points', fontsize=fontsize_label)
+        # Remove all but the max and min ticks for the colorbars
+        cbar_cmd.ax.set_xticks([])
+        cbar_heatmap.ax.set_xticks([])
+        # Reduce the size of the ticks for all the axes
+        for ax in [b_u_ax, b_p_ax, g_p_ax, g_p_heatmap_ax]:
+            ax.tick_params(axis='both', which='major', labelsize=8)
+        # Save the final figure with high resolution
+        fig.savefig(f"tests_figures/{terrain}/final_figure.png", format='png', dpi=300)
+
+    return
 
 
 # Load the dataframe
 df_all_terrain = pd.read_pickle(PATH_DATAFRAME)
 
-step_frame_interpolated_icp_x = column_type_extractor(df_all_terrain, "step_frame_interpolated_icp_x")
-step_frame_interpolated_icp_y = column_type_extractor(df_all_terrain, "step_frame_interpolated_icp_y")
-step_frame_interpolated_icp_yaw = column_type_extractor(df_all_terrain, "step_frame_interpolated_icp_yaw")
+#overlap_planned_vs_executed(df_all_terrain, range_limit = RANGE_LIMIT, consider_init_tf=CONSIDER_INIT_TF)
+#plot_with_and_without_tf(df_all_terrain, range_limit = RANGE_LIMIT)
+#test_heatmap(df_all_terrain, range_limit = 30, absolute=HEATMAP_ABSOLUTE)
 
-fig, ax = plt.subplots()
-draw_path(ax, 30, np.array([step_frame_interpolated_icp_x[0,:], step_frame_interpolated_icp_y[0,:], step_frame_interpolated_icp_yaw[0,:]]).T)
-plt.savefig("tests_figures/planned_path_interpolated.png")
-
-# Plot the path of the robot for each command in the dataframe
-#plot_dataframe(df_all_terrain)
-
-# Plot the relevant paths for the figure
-plot_relevant_paths(df_all_terrain)
+create_figure(df_all_terrain, range_limit = 30, absolute=HEATMAP_ABSOLUTE)

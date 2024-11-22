@@ -894,17 +894,17 @@ class SlipDatasetParser:
         return df
 
 if __name__ =="__main__":
-    path_to_dataset = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/gravel/warthog_wheels_gravel_ral2023/model_training_datasets/torch_ready_dataframe.pkl")
+    path_to_dataset = pathlib.Path("drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_datasets/torch_ready_dataframe.pkl")
 
     df = pd.read_pickle(path_to_dataset)
 
-    path_2_exp = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/gravel/warthog_wheels_gravel_ral2023/model_training_results/offline")
+    path_2_exp = pathlib.Path("drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_results/offline")
 
     data_parser = SlipDatasetParser(df,path_2_exp,0.3,1.08,-16.6666,16.666666,20)
 
     data = data_parser.append_slip_elements_to_dataset(compute_by_whole_step=True,debug=False,smooth=True)
 
-    path_2_exp = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/data/warthog/wheels/gravel/warthog_wheels_gravel_ral2023/model_training_datasets/slip_dataset_all.pkl")
+    path_2_exp = pathlib.Path("drive_datasets/data/warthog/wheels/asphalt/warthog_wheels_asphalt_2024_9_20_8h21s48/model_training_datasets/slip_dataset_all.pkl")
     data.to_pickle(path_2_exp)
 
     #print_column_unique_column(data)

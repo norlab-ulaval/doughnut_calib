@@ -519,8 +519,8 @@ if __name__=="__main__":
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
     filter_all_results_clearpath(path,"warthog","all",debug=False)
     
-    path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    filter_all_results_clearpath(path,"husky","all",debug=False)
+    #path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
+    #filter_all_results_clearpath(path,"husky","all",debug=False)
 
     
 
