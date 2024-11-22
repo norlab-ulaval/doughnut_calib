@@ -31,8 +31,8 @@ class LoggerNode(Node):
                 ('record_wheel_current',False),
                 ('record_wheel_voltage',False),
                 ('run_by_maestro',False),
-                ('right_wheel_encoder_velocity_index',2),
-                ('left_wheel_encoder_velocity_index',3),
+                ('right_wheel_encoder_velocity_index',1),
+                ('left_wheel_encoder_velocity_index',2),
                 ('type_of_encoder','Float64'), #Either joint_states or topic
                 ('cmd_msg_twist_stamped', False),
                 ('power_message_type', 'HuskyStatus')
@@ -293,8 +293,8 @@ class LoggerNode(Node):
         self.velocity_right_meas = msg
 
     def wheel_velocity_meas_callback(self, joinstate_data):
-        self.left_wheel_msg = Float64(data= joinstate_data.velocity[self.left_wheel_encoder_velocity_index])
-        self.right_wheel_msg = Float64(data= joinstate_data.velocity[self.right_wheel_encoder_velocity_index])
+        self.velocity_left_meas = Float64(data= joinstate_data.velocity[self.left_wheel_encoder_velocity_index])
+        self.velocity_right_meas = Float64(data= joinstate_data.velocity[self.right_wheel_encoder_velocity_index])
     
 
     def imu_callback(self, msg):
