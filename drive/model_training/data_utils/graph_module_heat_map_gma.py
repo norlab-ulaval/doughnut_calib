@@ -10,8 +10,10 @@ import shapely
 import pathlib
 import argparse
 import matplotlib.colors as mcolors
+import matplotlib as mpl
 
-ROBOT = "husky"
+ROBOT = "warthog"
+
 if ROBOT == "husky":
     DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
     GEOM_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/husky_geom_limits_by_terrain_for_filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
@@ -32,7 +34,9 @@ SIGMA_Y = 0.8
 RHO = 0
 
 # List of cline factor
-LIST_CLINE_FACTOR = [2, 2, 1]
+CLINE_DICT = {"slip_body_x_ss":[-0.5,0.5], "slip_body_y_ss":[-0.3,0.3], "slip_body_yaw_ss":[-1,1]}
+
+
 
 def gaussian_2d(x, y, mu_x=MU_X, mu_y=MU_Y, sigma_x=SIGMA_X, sigma_y=SIGMA_Y, rho=RHO):
     norm_const = 1 / (2 * np.pi * sigma_x * sigma_y * np.sqrt(1 - rho**2))
@@ -75,7 +79,7 @@ def plot_losange_limits(ax,geom):
         ax.plot(x,y, color="black")
 
 
-def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, filter = {},
+def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_list = [], filter = {},
                shape = (100,100), colormap = "PuOr", x_lim = AXIS_LIM, y_lim = AXIS_LIM,
                vmax = 6, proportionnal = False):
     if ax == None:
@@ -84,7 +88,6 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, f
     # Change the axis to be log scale
     ax.set_xscale("linear")
     ax.set_yscale("linear")
-    print(f"vmax: {vmax}")
     norm = mcolors.Normalize(vmin=-vmax, vmax=vmax)
     if proportionnal:
         norm = mcolors.LogNorm(vmin=0.1, vmax=vmax)
@@ -102,13 +105,13 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, f
         final_shape = int(np.sqrt(mean_prediction.shape[0]))
 
     
-    if cline_factor is not None:
+    if cline_list:
         round_vmax = np.round(vmax)
         CS = ax.contour(x_2_eval[:,0].reshape((final_shape,final_shape)),
                 x_2_eval[:,1].reshape((final_shape,final_shape)),
                 mean_prediction.reshape((final_shape,final_shape)),
                 #np.linspace(-round_vmax,round_vmax, int((cline_factor*round_vmax)+1)),
-                [-1, -0.5, -0.3, -0.1, 0, 0.1, 0.3, 0.5, 1],
+                cline_list,
                 colors="black", linewidths=0.5)
         
         ax.clabel(CS, inline=True, fontsize=10)
@@ -232,12 +235,8 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         terrain = list_terrain[i]
         
         df_terrain = df.loc[df["terrain"]==terrain]
-        col_x_y = ["cmd_body_yaw_lwmean","cmd_body_x_lwmean" ]
+        col_x_y = ["cmd_body_yaw_lwmean","cmd_body_x_lwmean"]
         
-        if cline:
-            list_cline_factor = LIST_CLINE_FACTOR
-        else:
-            list_cline_factor = [None]*len(list_col_interest)
         dict_results = process_data(df_terrain, list_col_interest, terrain, geom_to_filter = geom_by_terrain, 
                                     list_colormap = list_colormap, col_x_y = col_x_y, proportionnal = proportionnal)
         
@@ -289,9 +288,9 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             data_mean = terrain_dict[terrain]["list_data_mean"][j]
             data_std = terrain_dict[terrain]["list_data_std"][j]
             y = terrain_dict[terrain]["list_y"][j]
-            list_im_mean.append(plot_image(axs_mean_plot[j], X, data_mean, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
+            list_im_mean.append(plot_image(axs_mean_plot[j], X, data_mean, y, x_2_eval, cline_list = CLINE_DICT[list_col_interest[j]], filter = filter,
                 shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_mean[list_colormap[j]], proportionnal = proportionnal))
-            list_im_std.append(plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_factor = list_cline_factor[j], filter = filter,
+            list_im_std.append(plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_list = [], filter = filter,
                 shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]], proportionnal = proportionnal))
 
         axs_mean_plot[0].set_title(f"{terrain}")
@@ -346,9 +345,25 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     # Optional label for the colorbar
     mean_filename = f"mean_heat_map_gma_{ROBOT}.pdf"
     std_filename = f"std_heat_map_gma_{ROBOT}.pdf"
-    fig_mean.savefig(path.parent/mean_filename,format="pdf")
-    fig_std.savefig(path.parent/std_filename,format="pdf")
+    
+    fig_mean.savefig(f"tests_figures/{mean_filename}",format="pdf")
+    fig_std.savefig(f"tests_figures/{std_filename}",format="pdf")
     plt.show()
+
+
+def compute_data_statistics(data_path):
+    df = pd.read_pickle(data_path)
+
+    list_terrain = list(df.terrain.unique())
+    list_col_interest = ["slip_body_x_ss","slip_body_y_ss","slip_body_yaw_ss"]
+    for terrain in list_terrain:
+        print(f"Terrain: {terrain}")
+        df_terrain = df.loc[df["terrain"]==terrain]
+        for i in range(len(list_col_interest)):
+            print(f"Data column: {list_col_interest[i]}")
+            y = np.ravel(column_type_extractor(df_terrain, list_col_interest[i]))
+            print(f"Max: {np.max(y)}")
+            print(f"Min: {np.min(y)}")
 
 
 if __name__=="__main__":
@@ -368,3 +383,4 @@ if __name__=="__main__":
     proportionnal = parser.parse_args().proportionnal
 
     plot_heat_map_gaussian_moving_average(path, path_to_geom, cline, proportionnal)
+    compute_data_statistics(path)

@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
@@ -175,6 +174,13 @@ def plot_histogramme(ax,df,column_of_interest,transient_only_flag=True,nb_bins=3
             ax.hist(imu_acceleration_x,bins=nb_bins,density=densitybool, color=color)
     else:
             ax.hist(imu_acceleration_x,bins=nb_bins,range=x_lim, density=densitybool, color=color)
+
+    print("Col of Interest: " + column_of_interest)
+    print("Mean: " + np.mean(imu_acceleration_x))
+    print("Median: " + np.median(imu_acceleration_x))
+    print("Maximum: " + np.max(imu_acceleration_x))
+    print("Minimum: " + np.min(imu_acceleration_x))
+    print("STD: " + np.std(imu_acceleration_x))
     ax.set_ylabel(f"Probability density (n = {len(np.ravel(imu_acceleration_x))})")
 
     ax.set_xlabel(labels_y)
@@ -291,6 +297,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
             param_alpha = 0.5
 
             if "Accel_x" in list_of_plot_to_do:
+                print(f"Accel x on {terrain}")
                 #axs[k,i].set_title(f"acceleration_x on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
                 plot_histogramme(axs[k,i],df,"imu_acceleration_x",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
                 axs[k,i].set_facecolor(COLOR_DICT[terrain])
@@ -301,6 +308,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 continue
 
             if "Accel_y" in list_of_plot_to_do:
+                print(f"Accel y on {terrain}")
                 #axs[k,i].set_title(f"acceleration_y on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
                 plot_histogramme(axs[k,i],df,"imu_acceleration_y",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
                 vy_acceleration_theo = column_type_extractor(df,"step_frame_vy_theoretical_acceleration")
@@ -317,6 +325,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 continue
 
             if "Accel_yaw" in list_of_plot_to_do:
+                print(f"Accel yaw on {terrain}")
                 #axs[k,i].set_title(f"acceleration yaw from \n deriv icp on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
                 plot_histogramme(axs[k,i],df,"step_frame_deriv_vyaw_acceleration",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
                 vyaw_acceleration = column_type_extractor(df,"step_frame_vyaw_theoretical_acceleration")
@@ -327,6 +336,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 continue
 
             if "Accel_yaw_imu" in list_of_plot_to_do:
+                print(f"Accel yaw imu on {terrain}")
                 #axs[k,i].set_title(f"acceleration_yaw from \n deriv imu yaw vel {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
                 plot_histogramme(axs[k,i],df,"imu_deriv_vyaw_acceleration",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
                 vyaw_acceleration = column_type_extractor(df,"step_frame_vyaw_theoretical_acceleration")
@@ -337,6 +347,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 continue
 
             if "Slip_body_y" in list_of_plot_to_do:
+                print(f"Slip body y on {terrain}")
                 #axs[k,i].set_title(f"Slip body y on {terrain}\n")
                 plot_histogramme(axs[k,i],df,"slip_body_y_ss",transient_only_flag=False,nb_bins=nb_bins,x_lim=(-2,2),densitybool=densitybool, negative_values=True, color="blue")
                 if i == 0:
