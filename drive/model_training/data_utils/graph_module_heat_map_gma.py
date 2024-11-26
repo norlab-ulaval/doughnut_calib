@@ -11,10 +11,18 @@ import pathlib
 import argparse
 import matplotlib.colors as mcolors
 
-DATASET_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
-GEOM_PICKLE = "./drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl"
-TOGGLE_CLINE = False
-TOGGLE_PROPORTIONNAL = True
+ROBOT = "husky"
+if ROBOT == "husky":
+    DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    GEOM_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/husky_geom_limits_by_terrain_for_filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    AXIS_LIM = (-2,2)
+elif ROBOT == "warthog":
+    DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    GEOM_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/warthog_geom_limits_by_terrain_for_filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    AXIS_LIM = (-6,6)
+TOGGLE_CLINE = True
+TOGGLE_PROPORTIONNAL = False
+LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt", "tile"]
 
 # Gaussian parameters
 MU_X = 0
@@ -68,7 +76,7 @@ def plot_losange_limits(ax,geom):
 
 
 def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, filter = {},
-               shape = (100,100), colormap = "PuOr", x_lim = (-6,6), y_lim = (-6,6),
+               shape = (100,100), colormap = "PuOr", x_lim = AXIS_LIM, y_lim = AXIS_LIM,
                vmax = 6, proportionnal = False):
     if ax == None:
         fig, ax = plt.subplots(1,1)
@@ -100,7 +108,7 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_factor = None, f
                 x_2_eval[:,1].reshape((final_shape,final_shape)),
                 mean_prediction.reshape((final_shape,final_shape)),
                 #np.linspace(-round_vmax,round_vmax, int((cline_factor*round_vmax)+1)),
-                [-0.3, 0, 0.3],
+                [-1, -0.5, -0.3, -0.1, 0, 0.1, 0.3, 0.5, 1],
                 colors="black", linewidths=0.5)
         
         ax.clabel(CS, inline=True, fontsize=10)
@@ -129,7 +137,7 @@ def process_gma_meshgrid(X, y, x_2_eval):
 
 def process_data(df, list_col_interest,terrain,geom_to_filter = {}, 
                 list_colormap = None, col_x_y = ["cmd_right_wheels","cmd_left_wheels"],
-                x_lim = (-6,6), y_lim = (-6,6), proportionnal = False):
+                x_lim = AXIS_LIM, y_lim = AXIS_LIM, proportionnal = False):
     
     # Assert that the number of element in list_ax_mean, list_ax_std and list_col_interest are the same
     assert len(list_col_interest) == len(list_colormap)
@@ -196,6 +204,8 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     df = pd.read_pickle(data_path)
 
     list_terrain = list(df.terrain.unique())
+    # Remove any terrain that is not in the list of terrain to plot
+    list_terrain = [terrain for terrain in list_terrain if terrain in LIST_OF_TERRAINS_TO_PLOT]
     size = len(list_terrain)
     fig_mean, axs_mean = plt.subplots(3,size)
     fig_std, axs_std = plt.subplots(3,size)
@@ -300,30 +310,30 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], ax=axs_mean_plot[0])
         cbar.set_label("Slip Body X ss [m/s]")  
-        #cbar = plt.colorbar(list_im_mean[1], ax=axs_mean_plot[1])
-        #cbar.set_label("Slip Body Y ss [m/s]")
-        #cbar = plt.colorbar(list_im_mean[2], ax=axs_mean_plot[2])
-        #cbar.set_label("Slip Body yaw ss [rad/s]")
-        #cbar = plt.colorbar(list_im_std[0], ax=axs_std_plot[0])
-        #cbar.set_label("Slip Body X ss [m/s]")
-        #cbar = plt.colorbar(list_im_std[1], ax=axs_std_plot[1])
-        #cbar.set_label("Slip Body Y ss [m/s]")
-        #cbar = plt.colorbar(list_im_std[2], ax=axs_std_plot[2])
-        #cbar.set_label("Slip Body yaw ss [rad/s]")
+        cbar = plt.colorbar(list_im_mean[1], ax=axs_mean_plot[1])
+        cbar.set_label("Slip Body Y ss [m/s]")
+        cbar = plt.colorbar(list_im_mean[2], ax=axs_mean_plot[2])
+        cbar.set_label("Slip Body yaw ss [rad/s]")
+        cbar = plt.colorbar(list_im_std[0], ax=axs_std_plot[0])
+        cbar.set_label("Slip Body X ss [m/s]")
+        cbar = plt.colorbar(list_im_std[1], ax=axs_std_plot[1])
+        cbar.set_label("Slip Body Y ss [m/s]")
+        cbar = plt.colorbar(list_im_std[2], ax=axs_std_plot[2])
+        cbar.set_label("Slip Body yaw ss [rad/s]")
     else:
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], ax=axs_mean[0,axs_mean.shape[1]-1])
         cbar.set_label("Slip Body X ss [m/s]")  
-        #cbar = plt.colorbar(list_im_mean[1], ax=axs_mean[1,axs_mean.shape[1]-1])
-        #cbar.set_label("Slip Body Y ss [m/s]")
-        #cbar = plt.colorbar(list_im_mean[2], ax=axs_mean[2,axs_mean.shape[1]-1])
-        #cbar.set_label("Slip Body yaw ss [rad/s]")
-        #cbar = plt.colorbar(list_im_std[0], ax=axs_std[0,axs_std.shape[1]-1])
-        #cbar.set_label("Slip Body X ss [m/s]")
-        #cbar = plt.colorbar(list_im_std[1], ax=axs_std[1,axs_std.shape[1]-1])
-        #cbar.set_label("Slip Body Y ss [m/s]")
-        #cbar = plt.colorbar(list_im_std[2], ax=axs_std[2,axs_std.shape[1]-1])
-        #cbar.set_label("Slip Body yaw ss [rad/s]")
+        cbar = plt.colorbar(list_im_mean[1], ax=axs_mean[1,axs_mean.shape[1]-1])
+        cbar.set_label("Slip Body Y ss [m/s]")
+        cbar = plt.colorbar(list_im_mean[2], ax=axs_mean[2,axs_mean.shape[1]-1])
+        cbar.set_label("Slip Body yaw ss [rad/s]")
+        cbar = plt.colorbar(list_im_std[0], ax=axs_std[0,axs_std.shape[1]-1])
+        cbar.set_label("Slip Body X ss [m/s]")
+        cbar = plt.colorbar(list_im_std[1], ax=axs_std[1,axs_std.shape[1]-1])
+        cbar.set_label("Slip Body Y ss [m/s]")
+        cbar = plt.colorbar(list_im_std[2], ax=axs_std[2,axs_std.shape[1]-1])
+        cbar.set_label("Slip Body yaw ss [rad/s]")
         
     for ax in np.ravel(axs_mean):
         ax.set_facecolor("black")
@@ -334,8 +344,8 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         ax.set_aspect('equal', 'box')
 
     # Optional label for the colorbar
-    mean_filename = "mean_heat_map_gma.pdf"
-    std_filename = "std_heat_map_gma.pdf"
+    mean_filename = f"mean_heat_map_gma_{ROBOT}.pdf"
+    std_filename = f"std_heat_map_gma_{ROBOT}.pdf"
     fig_mean.savefig(path.parent/mean_filename,format="pdf")
     fig_std.savefig(path.parent/std_filename,format="pdf")
     plt.show()

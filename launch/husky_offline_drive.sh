@@ -13,7 +13,7 @@ fi
 INPUT_FOLDER="$1"
 echo $INPUT_FOLDER
 
-BASENAME="${INPUT_FOLDER:47:-16}"  # Get the base name without extension
+BASENAME="${INPUT_FOLDER:60:-16}"  # Get the base name without extension
 echo $BASENAME
 
 ROSBAG_PATH="$INPUT_FOLDER/${BASENAME}_to_remap"
@@ -34,7 +34,7 @@ PKL_FILE="$RESULT_FOLDER/raw_dataframe.pkl"
 echo $PKL_FILE
 
 # Define the file path where the YAML content will be saved
-config_file="/home/william/workspaces/drive_ws/src/norlab_robot/config/_drive_icp_mapper.yaml"
+config_file="/home/wilah/workspace/ros2_ws/src/norlab_robot/config/_drive_icp_mapper.yaml"
 
 # Write the content to the file
 cat <<EOL > "$config_file"
