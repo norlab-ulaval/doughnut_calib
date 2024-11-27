@@ -38,10 +38,10 @@ def launch_drive_orechestra(context, *args, **kwargs):
         config_file_driver_node],
     remappings=[
         ("odom_in", "/mapping/icp_odom"),
-        ("joy_in","/hri_joy"), # remap from="joy_in" to="hri_joy"  -->
-        ("cmd_vel_out","/doughnut_cmd_vel"),
-        ("left_wheel_in","/left_drive/velocity"),
-        ("right_wheel_in","/right_drive/velocity")
+        ("joy_in","/teleop/joy"), # remap from="joy_in" to="hri_joy"  -->
+        ("cmd_vel_out","/controller/cmd_vel"),
+        ("left_wheel_in","/warthog/platform/motor/left/status/velocity"),
+        ("right_wheel_in","/warthog/platform/motor/right/status/velocity")
         ],
     namespace="drive"
     )
