@@ -8,6 +8,6 @@ terrain_to_skip:
   #- asphalt
 robot_to_skip:
   - noskip
-  #- husky
+  - husky
   #- marmotte
-  #- warthog
+  # - warthog
