@@ -11,7 +11,7 @@ project_root = os.path.abspath("/home/william/workspaces/drive_ws/src/DRIVE/")
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.6,path_to_save="figure/fig_metric_boxplot.pdf"):
+def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.4,path_to_save="figure/fig_robot_comparison_metric_boxplot.pdf"):
 
     font = {'family' : 'normal',
         'weight' : 'bold',
@@ -28,7 +28,7 @@ def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.6,path_to_save="
     mpl.rcParams['lines.dashed_pattern'] = [2, 2]
     mpl.rcParams['lines.linewidth'] = 1.0
 
-    fig, axs = plt.subplots(3,1)
+    fig, axs = plt.subplots(1,1)
     fig.set_figwidth = 88/25.4
     fig.set_figheight = 4.5
 
@@ -46,7 +46,7 @@ def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.6,path_to_save="
     dico_robot_name = {"husky":"grey","warthog": "orange"}
     color_dict = {"asphalt":"grey", "ice":"blue","gravel":"orange","grass":"green","sand":"darkgoldenrod","avide":"grey","avide2":"grey","mud":"darkgoldenrod","tile":"lightcoral"}
                 
-    for terrain in list(df.terrain.unique()):
+    for terrain in ["asphalt", "grass"]:
         df_terrain = df.loc[df.terrain==terrain]
         nb_robot = 0
         if terrain == "tile":
@@ -57,8 +57,8 @@ def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.6,path_to_save="
             df_robot = df_terrain.loc[df_terrain.robot==robot]
             
             list_array_total.append(df_robot.total_energy_metric.loc[df_robot["terrain"] == terrain])
-            list_array_rot.append(df_robot.rotationnal_energy_metric.loc[df_robot["terrain"] == terrain])
-            list_array_transl.append(df_robot.translationnal_energy_metric.loc[df_robot["terrain"] == terrain])
+            # list_array_rot.append(df_robot.rotationnal_energy_metric.loc[df_robot["terrain"] == terrain])
+            # list_array_transl.append(df_robot.translationnal_energy_metric.loc[df_robot["terrain"] == terrain])
 
             list_robot_name.append(robot)
         list_robot.append(nb_robot)
@@ -99,59 +99,77 @@ def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.6,path_to_save="
         pos_hfill = position + delta_x/2
         list_pos_hfill.append(pos_hfill)
 
-    box1 = axs[0].boxplot(list_array_rot,showfliers=False,patch_artist=True,positions=list_position,widths=box_width,label=list_robot_name)
-    box2 = axs[1].boxplot(list_array_transl,showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
-    box3 = axs[2].boxplot(list_array_total,showfliers=False,patch_artist=True, positions=list_position,widths=box_width)
+    # box1 = axs[0].boxplot(list_array_rot,showfliers=False,patch_artist=True,positions=list_position,widths=box_width,label=list_robot_name)
+    # box2 = axs[1].boxplot(list_array_transl,showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
+    box = axs.boxplot(list_array_total,showfliers=False,patch_artist=True, positions=list_position,widths=box_width)
 
-    for box in [box1,box2,box3]:
+    for box in [box]:
         
-        for patch, robot_name in zip(box['boxes'],list_robot_name):
+        for patch, terrain in zip(box['boxes'], ["asphalt", "asphalt", "grass", "grass"]):
 
-            patch.set_facecolor(dico_robot_name[robot_name])  # Change to your desired color
+            patch.set_facecolor(color_dict[terrain])  # Change to your desired color
             patch.set_alpha(alpha_bp)
         # Change the median line color to black
         for median in box['medians']:
             median.set_color('black')
-    list_terrain_x_ticks = [terrain[0].capitalize() + terrain[1:] for terrain in list_terrain]
-
-    axs[0].set_xticks(list_pos_labels,labels=[])
-    axs[1].set_xticks(list_pos_labels,labels=[])
+    # list_terrain_x_ticks = [terrain[0].capitalize() + terrain[1:] for terrain in list_terrain]
+    # axR = axs.secondary_xaxis("top")
+    # axR.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+    # ticksR = [0.675, 1.525]
+    # tickR_labels = ["Asphalt", "Grass"]
+    # axR.set_xticks(ticksR, tickR_labels)
+    axs.vlines(1.1,ymax=5,ymin=0,color="black",alpha=alpha_bp, linewidth=0.75, linestyles="--")
+    ticks = [0.5, 0.85, 1.35, 1.7]
+    tick_labels = ["Warthog", "Husky", "Warthog", "Husky"]
+    axs.set_xticks(ticks, tick_labels)
+    # axs[0].set_xticks(list_pos_labels,labels=[])
+    # axs[1].set_xticks(list_pos_labels,labels=[])
     #axs[2].set_xticks(list_pos_labels,labels=list_terrain_x_ticks)
 
-    axs[0].set_ylabel("Difficulty metric \n rotationnal energy [J]")
-    axs[1].set_ylabel("Difficulty metric \n translationnal energy [J]")
-    axs[2].set_ylabel("Difficulty metric \n total energy [J]")
+    # axs[0].set_ylabel("Difficulty metric \n rotationnal energy [J]")
+    # axs[1].set_ylabel("Difficulty metric \n translationnal energy [J]")
+    axs.set_ylabel("Difficulty metric \n total energy [SI]")
 
     # Extract legends from both axes
-    legend1 = axs[0].get_legend_handles_labels()
-    # Combine legends from both axes
-    handles = legend1[0] 
-    labels = legend1[1]
-
-    final_handles = [handles[4],handles[5]]
-    final_labels = [labels[4][0].capitalize() + labels[4][1:],labels[5][0].capitalize() + labels[5][1:]]
+    # legend1 = axs.get_legend_handles_labels()
+    # # Combine legends from both axes
+    # print(legend1)
+    # handles = legend1[0] 
+    # labels = legend1[1]
+    # print(handles)
+    # print(labels)
+    # final_handles = [handles[4],handles[5]]
+    # final_labels = [labels[4][0].capitalize() + labels[4][1:],labels[5][0].capitalize() + labels[5][1:]]
     
-    axs[0].legend(handles=final_handles,labels=final_labels)
+    # axs.legend(handles=handles,labels=labels)
     #axs[1].set_ylabel("translationnal_energy_metric")
     #axs[2].set_ylabel("total_energy_metric")
 
     for ax in np.ravel(axs):
         ax.set_xlim(delta_x/2,list_pos_hfill[-1])
-        ax.set_ylim(0,1)
+        ax.set_ylim(0,1.02)
     ## Add the color fill 
     j = 1 
     print(list_position)
     print(list_pos_hfill)
 
     print(list_terrain)
-    for terrain  in list_terrain:
+    legend_labels = ["Asphalt", "Grass", "Grass"]
+    axs.legend(labels=legend_labels)
+    leg = axs.get_legend()
+    handles = leg.legend_handles
+    handles = [handles[0], handles[-1]]
+    legend_labels = [legend_labels[0], legend_labels[-1]]
+    axs.legend(handles, legend_labels)
+
+    # for terrain  in list_terrain:
         
-        axs[0].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_dict[terrain],alpha=alpha_param,label=terrain)
-        axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_dict[terrain],alpha=alpha_param)
-        axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_dict[terrain],alpha=alpha_param)
+    #     # axs[0].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_dict[terrain],alpha=alpha_param,label=terrain)
+    #     # axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_dict[terrain],alpha=alpha_param)
+    #     axs.fill_between(list_pos_hfill[j-1:j+1],y1=5,color=color_dict[terrain],alpha=alpha_param)
         
-        j+=2
-    fig.tight_layout()
+        # j+=2
+    # fig.tight_layout()
 
     fig.savefig(path_to_save,dpi=300)
     fig.savefig(path_to_save[:-4]+".png",dpi=300)
@@ -553,7 +571,7 @@ if __name__ =="__main__":
 
 
     #boxplot(df)
-    boxplot_all_terrain_warthog_robot(df)
+    boxplot_all_terrain_all_robot(df)
     #boxplot_few_robot_few_terrain(df)
     #print(df.columns)
     #plot_scatter_metric(df)

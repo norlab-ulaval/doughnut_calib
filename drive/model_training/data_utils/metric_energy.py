@@ -9,8 +9,12 @@ import matplotlib.pyplot as plt
 global PATH_TO_METRIC 
 global PATH_TO_SAVE_FOLDER
 from datetime import datetime
-
-
+import sys
+import os
+project_root = os.path.abspath("/home/william/workspaces/drive_ws/src/DRIVE/")
+if project_root not in sys.path:
+    sys.path.append(project_root)
+    
 
 PATH_TO_METRIC = pathlib.Path('drive/model_training/data_utils/metric_config.yaml')
 PATH_TO_SAVE_FOLDER = pathlib.Path('drive_datasets/results_multiple_terrain_dataframe/metric')
