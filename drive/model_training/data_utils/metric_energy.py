@@ -867,7 +867,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         return resulting_energy_cmd,resulting_energy_wheels, metric_energy_raw_wheels,metric_energy_raw_cmd,metric_scatter_cmd
     
 
-    def compute_all_terrain(self,dataset,multiple_terrain=False,n_rows=-1,list_lim_vel_x = [5.0],list_lim_vel_yaw=[5.0]):
+    def compute_all_terrain(self,dataset,multiple_terrain=False,n_rows=-1,list_lim_vel_x = [5.0],list_lim_vel_yaw=[5.0],save_video=True):
 
         new_file =False
         list_row = []
@@ -892,7 +892,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
                 result_terrain_cmd["lim_vel_x"] = lim_vel_x
                 result_terrain_encoder["lim_vel_yaw"] = lim_vel_yaw
                 result_terrain_encoder["lim_vel_x"] = lim_vel_x
-
+                
                 shape = metric_energy_raw_wheels["total_energy_metric"].shape[0]
                 metric_energy_raw_wheels["terrain"] = [terrain] * shape
                 metric_energy_raw_cmd["terrain"] = [terrain] * shape 
@@ -935,11 +935,10 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
                 
 
         df_all_terrain = pd.DataFrame.from_records(list_row)
-        df_all_terrain.to_csv(self.metric_parameters['path_to_save'][:-4]+f"_{self.robot_name}"+".csv")
+        df_all_terrain["nstep"] =[n_rows]*df_all_terrain.shape[0]
         print("lsit_row")
-        df_all_terrain = pd.DataFrame.from_records(list_row_encoder)
-        df_all_terrain.to_csv(self.metric_parameters['path_to_save'][:-4]+ f"_{self.robot_name}"+"_wheel_encoder.csv")
-        df_all_terrain["robot"] = df_all_terrain.shape[0] * [self.robot_name]
+        df_all_terrain_2 = pd.DataFrame.from_records(list_row_encoder)
+        df_all_terrain_2["robot"] = df_all_terrain_2.shape[0] * [self.robot_name]
         
 
         print("lsit_wheels")
@@ -949,19 +948,42 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         df_all_wheel["robot"] = df_all_wheel.shape[0] * [self.robot_name]
         df_all_cmd["robot"] = df_all_cmd.shape[0] * [self.robot_name]
 
-        df_all_wheel.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_metric_wheels_raw_slope_metric.csv")
-        df_all_cmd.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_metric_cmd_raw_slope_metric.csv")
         #self.saving_path = path_to_dataset_folder
 
         df_all_scatter_cmd = pd.concat(list_df_cmd_scatter,axis=0)
         df_all_scatter_cmd["robot"] = df_all_scatter_cmd.shape[0] * [self.robot_name]
-        df_all_scatter_cmd.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_metric_cmd_raw_slope_metric_scatter.csv")
+        
+        if save_video:
+            df_all_terrain.to_csv(self.metric_parameters['path_to_save'][:-4]+f"_{self.robot_name}"+".csv")
+            df_all_terrain_2.to_csv(self.metric_parameters['path_to_save'][:-4]+ f"_{self.robot_name}"+"_wheel_encoder.csv")
+            df_all_wheel.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_metric_wheels_raw_slope_metric.csv")
+            df_all_cmd.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_metric_cmd_raw_slope_metric.csv")
+            df_all_scatter_cmd.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_metric_cmd_raw_slope_metric_scatter.csv")
+
 
         
+        return df_all_terrain
+
+    def compute_all_terrain_variable_steps(self, dataset,multiple_terrain=False,list_lim_vel_x = [5.0],list_lim_vel_yaw=[5.0],n_division=51):
+    
 
 
-    
-    
+        list_df = [] 
+        
+        list_terrain = dataset.df.terrain.value_counts()
+
+
+        nb_rows = np.linspace(0,100,n_division)
+
+        for nrow in nb_rows:
+
+            # Lire marsupial robotics : transporter :coordinator, leader, facilitate communication, transporter, supporter. 
+            #
+            list_df.append(self.compute_all_terrain(dataset,n_rows=nrow,list_lim_vel_x = list_lim_vel_x,list_lim_vel_yaw=list_lim_vel_yaw,save_video=False))
+
+        df_combine = pd.concat(list_df,axis=0)
+
+        df_combine.to_csv("drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_steps_convergence.csv")
 if __name__ == "__main__":
 
     
@@ -983,6 +1005,7 @@ if __name__ == "__main__":
 
     dataset2 = Dataset2Evaluate("drive_dataset_husky")
     dm2 = SlopeMetric("SlopeMetric","husky")
+
 
     path_to_result = dm2.compute_all_terrain(dataset2,list_lim_vel_x = list_lim_vel_x,list_lim_vel_yaw=list_lim_vel_yaw)
 

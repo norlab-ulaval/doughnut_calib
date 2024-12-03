@@ -135,7 +135,7 @@ def reverse_engineer_clearpath_max_speed(df,robot_param,debug=False):
 
         pt = Point(cmd[i,:])
 
-        if shapely.within(pt, rectangle):
+        if shapely.within(pt, rectangle) or shapely.touches(pt,rectangle):
             filter.append(True)
         else:
             filter.append(False)
@@ -321,7 +321,7 @@ def filter_all_results_clearpath(path_to_df,robot,debug=False):
     dict_terrain["robot"] = robot_param
     extract_wheel_and_clearpath_limit_by_terrain(path_to_save,robot,dict_terrain)
 
-    
+    return df_finall
 ### Extract the maximum limits from the body. 
 
     
@@ -363,7 +363,7 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df,robot,dict_terrain):
     print("\n"*3,path_to_save,"\n"*3)
 
 
-        
+    
 
 
 
@@ -371,9 +371,24 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df,robot,dict_terrain):
 if __name__=="__main__":
     
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    filter_all_results_clearpath(path,"warthog",debug=True)
+    df_filtered = filter_all_results_clearpath(path,"warthog",debug=False)
+
+    df_test = pd.read_pickle(path)
+    
+    df_sand = df_test.loc[df_test.terrain == "sand"]
+    print(df_sand.shape)
+
+    df_filtered_sand = df_filtered.loc[df_filtered.terrain=="sand"]
+    print(df_filtered_sand)
+
     
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
+    filter_all_results_clearpath(path,"husky",debug=False)
+
+    path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl"
+    filter_all_results_clearpath(path,"warthog",debug=False)
+    
+    path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl"
     filter_all_results_clearpath(path,"husky",debug=False)
 
     
