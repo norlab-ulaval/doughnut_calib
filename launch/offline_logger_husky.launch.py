@@ -28,14 +28,9 @@ def launch_drive_orechestra(context, *args, **kwargs):
     output='screen',
     parameters=[config_file_logger],
     remappings=[                    
-        ("wheel_vel_left_measured", "/left_drive/status/speed"),
-        ("wheel_vel_right_measured","/right_drive/status/speed"),
         ("odometry_in","/mapping/icp_odom"),
         ("imu_in","/mti100/data"), # valider l'IMU 
-        ("left_wheel_current_in","/left_drive/status/battery_current_corrected"),
-        ("left_wheel_voltage_in","/left_drive/status/battery_voltage"),
-        ("right_wheel_voltage_in","/right_drive/status/battery_voltage"),
-        ("right_wheel_current_in","/right_drive/status/battery_current_corrected"),
+        ('/doughnut_cmd_vel', "/controller/cmd_vel" )
         ],
     namespace="drive"
     )

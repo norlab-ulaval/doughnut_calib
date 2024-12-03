@@ -13,7 +13,7 @@ fi
 INPUT_FOLDER="$1"
 echo $INPUT_FOLDER
 
-BASENAME="${INPUT_FOLDER:43:-16}"  # Get the base name without extension
+BASENAME="${INPUT_FOLDER:55:-16}"  # Get the base name without extension
 echo $BASENAME
 
 ROSBAG_PATH="$INPUT_FOLDER/${BASENAME}_to_remap"
@@ -22,7 +22,7 @@ echo $ROSBAG_PATH
 RESULT_FOLDER="$INPUT_FOLDER/models_training_datasets"
 echo $RESULT_FOLDER
 
-MAP_FILE="$INPUT_FOLDER/map.vtk"
+MAP_FILE="$INPUT_FOLDER/map.csv"
 echo $MAP_FILE
 
 ROSBAG_RECORD="$INPUT_FOLDER/odom_bag"
@@ -36,6 +36,10 @@ echo $PKL_FILE
 # Define the file path where the YAML content will be saved
 config_file="/home/william/workspaces/drive_ws/src/norlab_robot/config/_drive_icp_mapper.yaml"
 
+init_pose_file="$INPUT_FOLDER/init_pose.txt"
+INIT_POSE=$(<"$init_pose_file")
+echo $INIT_POSE
+
 # Write the content to the file
 cat <<EOL > "$config_file"
 /**:
@@ -45,6 +49,7 @@ cat <<EOL > "$config_file"
       odom_frame: "odom"
       map_tf_publish_rate: 100.0
       initial_map_file_name: "$MAP_FILE"
+      initial_robot_pose: "$INIT_POSE"
       is_mapping: false
       use_sim_time: true
 EOL
