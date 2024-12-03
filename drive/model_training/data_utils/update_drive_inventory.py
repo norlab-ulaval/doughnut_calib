@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np 
 import time 
 import argparse
+DRIVE_DEFAULT_PATH = pathlib.Path.cwd()
+print(DRIVE_DEFAULT_PATH)
 
 DRIVE_DEFAULT_PATH = pathlib.Path.cwd()
 print(DRIVE_DEFAULT_PATH)
@@ -368,4 +370,4 @@ if __name__=="__main__":
     produce_video = True
     dico_2_do = update_yaml_file(result_folder=result_folder, drive_workspace=drive_workspace, drive_inventory_names = drive_inventory_names, produce_video = produce_video)
     dico_2_do.pop("last_update_time")
-    list_dataframe = list(dico_2_do.values())
+    list_dataframe = list(dico_2_do.values()) 
