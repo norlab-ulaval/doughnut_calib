@@ -23,7 +23,7 @@ TERRAIN_COLOR_DICT = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayaw
 
 font = {'family' : 'normal',
         'weight' : 'bold',
-        'size'   : 12}
+        'size'   : 10}
 plt.rc('font', **font)
 plot_fs = 12
 plt.rc('font', family='serif', serif='Times')
@@ -33,6 +33,8 @@ plt.rc('ytick', labelsize=9)
 plt.rc('axes', labelsize=10)
 mpl.rcParams['lines.dashed_pattern'] = [2, 2]
 mpl.rcParams['lines.linewidth'] = 1.0 
+mpl.rcParams['markers.fillstyle'] = 'full'
+mpl.rcParams['scatter.edgecolors'] = 'none'
 
 class Command:
     def __init__(self, cmd_vel, cmd_angle, delta_s, step_nb, initial_pose=[0.0, 0.0, 0.0]):
@@ -129,25 +131,28 @@ def setup_axis(ax, limits = (-RANGE_LIMIT, RANGE_LIMIT)):
     ax.set_aspect('equal')
 
 
-def draw_path(ax, limits, path, point_size=1, color='b', alpha=0.2, downsample=1, quiver=False, label='Robot pose'):
+def draw_path(ax, limits, path, point_size=2, color='b', alpha=0.07, downsample=1, quiver=False, label='Robot pose'):
     setup_axis(ax, limits)
     path = np.array(path)
     # Find the u,v vectors of the orientation using the yaw angle
     u = np.cos(path[:, 2])
     v = np.sin(path[:, 2])
     # Plot the orientation of the robot as a quiver plot with only 1 point out of 10
+    color = 'black'
     if quiver:
         im = ax.quiver(path[::downsample, 1], path[::downsample, 0], v[::downsample], u[::downsample], angles='xy', scale_units='xy', scale=1, color=color, label=label)
     else:
-        im = ax.scatter(path[::downsample, 1], path[::downsample, 0], color=color, s=point_size, alpha=alpha, label=label)
+        im = ax.scatter(path[::downsample, 1], path[::downsample, 0], edgecolor='none', facecolor=color, s=point_size, alpha=alpha, label=label, marker='.')
+        #im = ax.plot((path[::downsample, 1], path[::downsample, 0]), color=color, linewidth=point_size, alpha=alpha, label=label)
 
     return im
 
 
-def draw_path_from_command(ax, limits, cmd, point_size=1, color='b', alpha=0.2, downsample=1, quiver=False, label='Robot pose'):
+def draw_path_from_command(ax, limits, cmd, point_size=2, color='b', alpha=0.05, downsample=1, quiver=False, label='Robot pose'):
     planned_path = process_path(cmd)
     planned_path = np.array(planned_path)
-    return draw_path(ax, limits, planned_path, point_size, color, alpha, downsample, quiver, label)
+    draw_path(ax, limits, planned_path, point_size, color, alpha, downsample, quiver, label)
+    return planned_path
 
 
 def update_path_with_init_tf(path_list, init_tf):
@@ -196,7 +201,8 @@ def generate_heatmap_from_path(ax, path, range_limit=(-RANGE_LIMIT, RANGE_LIMIT)
     mean = np.nanmean(counts[0])
     median = np.nanmedian(counts[0])
     std = np.nanstd(counts[0])
-    print(f"Mean: {mean}, Median: {median}, Std: {std}")
+    maximum_value = np.nanmax(counts[0])
+    print(f"Mean: {mean}, Median: {median}, Std: {std}, Max: {maximum_value}")
     return
 
 
@@ -379,11 +385,11 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
         colormap_planned = plt.cm.viridis(np.linspace(0, 1, cmd_nbr))
         colormap_executed = plt.cm.viridis(np.linspace(0, 1, cmd_nbr))
         # Create a figure for the heatmap
-        fig = plt.figure(figsize=(88/25.4, 108/25.4))
-        b_u_ax = fig.add_axes((0.05, 0.635, 0.53, 0.30))
-        b_p_ax = fig.add_axes((0.52, 0.635, 0.53, 0.30))
-        g_p_ax = fig.add_axes((0.05, 0.195, 0.53, 0.30))
-        g_p_heatmap_ax = fig.add_axes((0.52, 0.195, 0.53, 0.30))
+        fig = plt.figure(figsize=(88/25.4, 118/25.4))
+        b_u_ax = fig.add_axes((0.06, 0.67, 0.53, 0.28))
+        b_p_ax = fig.add_axes((0.50, 0.67, 0.53, 0.28))
+        g_p_ax = fig.add_axes((0.06, 0.24, 0.53, 0.28))
+        g_p_heatmap_ax = fig.add_axes((0.50, 0.24, 0.53, 0.28))
         # Get the required data from the dataframe
         data_dict = extract_data_from_dataframe(df_terrain)
         x_pos_list = []
@@ -393,20 +399,23 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
         max_value = 0
         min_value = 100
         # Loop over the rows of the dataframe
+        print("Nbr of commands: ", cmd_nbr)
         for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
             cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS)
-            im_b_u = draw_path_from_command(b_u_ax, range_limit, cmd, color=colormap_planned[i])
-            im_b_p = draw_path(b_p_ax, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=colormap_executed[i])
+            planned_path_global = draw_path_from_command(b_u_ax, range_limit, cmd, color=colormap_planned[i], downsample=1)
+            draw_path(b_p_ax, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color=colormap_executed[i], downsample=1)
 
             cmd = Command(data_dict["cmd_vel_x"][i], data_dict["cmd_vel_yaw"][i], TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
             path_raw = np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T
             path_with_init_tf = update_path_with_init_tf(path_raw, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
-            
+            planned_path_global_with_init_tf = update_path_with_init_tf(planned_path_global, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
+
             planned_path = np.array(path_with_init_tf)
             max_value = max([np.max(planned_path[:, 0]), np.max(planned_path[:, 1]), max_value])
             min_value = min([np.min(planned_path[:, 0]), np.min(planned_path[:, 1]), min_value])
 
-            draw_path(g_p_ax, None, path_with_init_tf, color=colormap_executed[i])
+            draw_path(g_p_heatmap_ax, None, path_with_init_tf, color=colormap_executed[i], downsample=1)
+            draw_path(g_p_ax, None, planned_path_global_with_init_tf, color=colormap_planned[i], downsample=1)
 
             if absolute:
                 x_pos_list.append(planned_path[:, 0])
@@ -433,7 +442,7 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
         x_pos = np.concatenate(x_pos_list)
         y_pos = np.concatenate(y_pos_list)
         planned_path = np.array([x_pos, y_pos]).T
-        generate_heatmap_from_path(g_p_heatmap_ax, planned_path, range_limit=(min_value,max_value), cmap='inferno')
+        #generate_heatmap_from_path(g_p_heatmap_ax, planned_path, range_limit=(min_value,max_value), cmap='inferno')
         g_p_ax.set_xlim(min_value-1, max_value+1)
         g_p_ax.set_ylim(min_value-1, max_value+1)
         g_p_heatmap_ax.set_xlim(min_value-1, max_value+1)
@@ -442,40 +451,58 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
         fontsize_label = 8
         labelpad = -0.5
         # Remove the axis labels for the combined figure
-        b_u_ax.set_xlabel(r"${}^{\mathcal{B}}y$ [m]", fontsize=fontsize_label, labelpad=labelpad)
-        b_u_ax.set_ylabel(r"${}^{\mathcal{B}}x$ [m]", fontsize=fontsize_label, labelpad=labelpad)
-        b_p_ax.set_xlabel(r"${}^{\mathcal{B}}y$ [m]", fontsize=fontsize_label, labelpad=labelpad)
-        b_p_ax.set_ylabel(r"", fontsize=fontsize_label, labelpad=labelpad)
-        g_p_ax.set_xlabel(r"${}^{\mathcal{G}}x$ [m]", fontsize=fontsize_label, labelpad=labelpad)
-        g_p_ax.set_ylabel(r"${}^{\mathcal{G}}y$ [m]", fontsize=fontsize_label, labelpad=labelpad)
-        g_p_heatmap_ax.set_xlabel(r"${}^{\mathcal{G}}x$ [m]", fontsize=fontsize_label, labelpad=labelpad)
-        g_p_heatmap_ax.set_ylabel(r"", fontsize=fontsize_label, labelpad=labelpad)
+        #b_u_ax.set_xlabel(r"${}^{\mathcal{B}}y$ (m)", labelpad=labelpad)
+        b_u_ax.set_xlabel(r"Position $y$ (m)", labelpad=labelpad)
+        b_u_ax.set_ylabel(r"Position $x$ (m)", labelpad=labelpad)
+        b_p_ax.set_xlabel(r"Position $y$ (m)", labelpad=labelpad)
+        # Add text in the upper right corner of the axes
+        b_p_ax.text(0.95, 0.95, r'${}^{\mathcal{B}}$', verticalalignment='top', horizontalalignment='right', transform=b_p_ax.transAxes, fontsize=fontsize_label+6)
+        b_u_ax.text(0.95, 0.95, r'${}^{\mathcal{B}}$', verticalalignment='top', horizontalalignment='right', transform=b_u_ax.transAxes, fontsize=fontsize_label+6)
+        b_p_ax.set_ylabel(r"", labelpad=labelpad)
+        b_p_ax.set_yticks([])
+        b_u_ax.set_xlim(18, -18)
+        b_u_ax.set_ylim(-18, 18)
+        b_p_ax.set_xlim(18, -18)
+        b_p_ax.set_ylim(-18, 18)
+        g_p_ax.set_xlabel(r"Position $y$ (m)", labelpad=labelpad)
+        g_p_ax.set_ylabel(r"Position $x$ (m)", labelpad=labelpad)
+        g_p_ax.text(0.95, 0.95, r'${}^{\mathcal{G}}$', verticalalignment='top', horizontalalignment='right', transform=g_p_ax.transAxes, fontsize=fontsize_label+6)
+        g_p_heatmap_ax.text(0.95, 0.95, r'${}^{\mathcal{G}}$', verticalalignment='top', horizontalalignment='right', transform=g_p_heatmap_ax.transAxes, fontsize=fontsize_label+6)
+        g_p_heatmap_ax.set_xlabel(r"Position $y$ (m)", labelpad=labelpad)
+        g_p_heatmap_ax.set_ylabel(r"", labelpad=labelpad)
+        g_p_heatmap_ax.set_yticks([])
         
         #axs[0].set_title(r'${}^{\mathcal{B}}$')
-        b_u_ax.set_title(r'${}^{\mathcal{B}} f(\mathbf{u_\tau})$')
-        b_p_ax.set_title(r'${}^{\mathcal{B}} \mathbf{p_\tau}$')
-        g_p_ax.set_title(r'${}^{\mathcal{G}} \mathbf{p_\tau}$')
-        g_p_heatmap_ax.set_title(r'${}^{\mathcal{G}} \mathbf{p_\tau}$ density')
+        #b_u_ax.set_title(r'${}^{\mathcal{B}} f(\mathbf{u_\tau})$')
+        b_u_ax.set_title(r'Commanded position')
+        #b_p_ax.set_title(r'${}^{\mathcal{B}} \mathbf{p_\tau}$')
+        b_p_ax.set_title(r'Executed position')
+        #g_p_ax.set_title(r'${}^{\mathcal{G}} \mathbf{p_\tau}$')
+        g_p_ax.set_title(r'Commanded position')
+        #g_p_heatmap_ax.set_title(r'${}^{\mathcal{G}} \mathbf{p_\tau}$ density')
+        g_p_heatmap_ax.set_title(r'Executed position')
         # Set the background color according to the terrain
-        for ax in [b_u_ax, b_p_ax, g_p_ax, g_p_heatmap_ax]:
-            ax.set_facecolor(TERRAIN_COLOR_DICT[terrain])
+        #for ax in [b_u_ax, b_p_ax, g_p_ax, g_p_heatmap_ax]:
+        #    ax.set_facecolor(TERRAIN_COLOR_DICT[terrain])
         # Add colorbar to the center bottom of the whole figure
-        cbar_cmd_ax = fig.add_axes((0.12, 0.10, 0.40, 0.01))
+        cbar_cmd_ax = fig.add_axes((0.16, 0.10, 0.35, 0.01))
         norm = Normalize(vmin=0, vmax=cmd_nbr)
         sm = plt.cm.ScalarMappable(norm=norm, cmap=plt.cm.viridis)
         cbar_cmd = fig.colorbar(sm, cax=cbar_cmd_ax, orientation='horizontal')
-        cbar_heatmap_ax = fig.add_axes((0.58, 0.10, 0.40, 0.01))
+        cbar_heatmap_ax = fig.add_axes((0.60, 0.10, 0.35, 0.01))
         cbar_heatmap = fig.colorbar(g_p_heatmap_ax.collections[0], cax=cbar_heatmap_ax, orientation='horizontal')
-        cbar_cmd.set_label('Command iteration' , fontsize=fontsize_label)
-        cbar_heatmap.set_label('Number of points', fontsize=fontsize_label)
+        cbar_cmd.set_label('Command iteration')
+        cbar_heatmap.set_label('Number of positions')
         # Remove all but the max and min ticks for the colorbars
         #cbar_cmd.ax.set_xticks([])
         #cbar_heatmap.ax.set_xticks([])
         # Reduce the size of the ticks for all the axes
         for ax in [b_u_ax, b_p_ax, g_p_ax, g_p_heatmap_ax]:
-            ax.tick_params(axis='both', which='major', labelsize=8)
+            ax.tick_params(axis='both', which='major')
         # Save the final figure with high resolution
-        fig.savefig(f"tests_figures/{terrain}/final_figure.png", format='png', dpi=300)
+        fig.savefig(f"tests_figures/{terrain}/final_figure.png", format='png', dpi=1200)
+        fig.savefig(f"tests_figures/{terrain}/final_figure.pdf", format='pdf', dpi=300)
+        fig.savefig(f"tests_figures/{terrain}/final_figure.svg", format='svg', dpi=300)
 
     return
 

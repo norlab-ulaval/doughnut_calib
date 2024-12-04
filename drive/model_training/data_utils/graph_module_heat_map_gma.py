@@ -8,6 +8,7 @@ import pathlib
 import argparse
 import matplotlib.colors as mcolors
 import matplotlib as mpl
+from matplotlib import gridspec
 
 ROBOT = "warthog"
 
@@ -18,8 +19,8 @@ if ROBOT == "husky":
     # Gaussian parameters
     MU_X = 0
     MU_Y = 0
-    SIGMA_X = 0.4
-    SIGMA_Y = 0.2
+    SIGMA_X = 0.25
+    SIGMA_Y = 0.25
     RHO = 0
 elif ROBOT == "warthog":
     DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
@@ -28,17 +29,17 @@ elif ROBOT == "warthog":
     # Gaussian parameters
     MU_X = 0
     MU_Y = 0
-    SIGMA_X = 1
-    SIGMA_Y = 1
+    SIGMA_X = 0.8
+    SIGMA_Y = 0.8
     RHO = 0
 TOGGLE_CLINE = True
 TOGGLE_PROPORTIONNAL = False
-LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt"]#, "tile"]
-#LIST_OF_TERRAINS_TO_PLOT = ["sand"]
+#LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt"]#, "tile"]
+LIST_OF_TERRAINS_TO_PLOT = ["ice", "grass"]
 
 font = {'family' : 'normal',
         'weight' : 'bold',
-        'size'   : 12}
+        'size'   : 10}
 plt.rc('font', **font)
 plot_fs = 12
 plt.rc('font', family='serif', serif='Times')
@@ -50,7 +51,9 @@ mpl.rcParams['lines.dashed_pattern'] = [2, 2]
 mpl.rcParams['lines.linewidth'] = 1.0 
 
 # List of cline factor
-CLINE_DICT = {"slip_body_x_ss":[], "slip_body_y_ss":[], "slip_body_yaw_ss":[]}
+CLINE_DICT = {"slip_body_x_ss":[-0.3, 0.3],
+               "slip_body_y_ss":[-0.2, 0.2], 
+               "slip_body_yaw_ss":[-3, 3]}
 
 
 
@@ -62,6 +65,19 @@ def gaussian_2d(x, y, mu_x=MU_X, mu_y=MU_Y, sigma_x=SIGMA_X, sigma_y=SIGMA_Y, rh
         (2 * rho * (x - mu_x) * (y - mu_y) / (sigma_x * sigma_y))
     )
     return norm_const * np.exp(exp_part)
+
+
+import math
+
+# Function to count points within elliptical radius
+def count_points_within_ellipse(points, target = (0,0), radius_x = SIGMA_X, radius_y = SIGMA_Y):
+    count = 0
+    for (x, y) in points:
+        # Scaled distance using elliptical formula
+        distance = ((x - target[0]) / radius_x) ** 2 + ((y - target[1]) / radius_y) ** 2
+        if distance <= 1:
+            count += 1
+    return count
 
 
 def filtered_mesgrid_cmd_based_on_geom(geom_by_terrain,terrain,x_mesh,y_mesh):
@@ -131,22 +147,30 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_list = [], filte
 
     return im
 
-def process_gma_meshgrid(X, y, x_2_eval):
+def process_gma_meshgrid(X, y, x_2_eval, geom):
     slip_list_mean = []
     slip_list_std = []
+    count_list = []
     # Compute the slip for the meshgrid
     for i in x_2_eval:
         # Recenter all the values around the point i
         X_centered = X - i
+        # Compute the number of points within a radius of SIGMA_X and SIGMA_Y (assuming they are equal)
+        count = count_points_within_ellipse(X_centered, target=(0,0), radius_x=SIGMA_X, radius_y=SIGMA_Y)
+        pt = shapely.geometry.Point(i)
+        if shapely.within(pt,geom):
+            count_list.append(count)
+
         # Compute the amplitude of the point X_centered with the gaussian function
         amplitude = gaussian_2d(X_centered[:,0],X_centered[:,1])
         slip = np.sum(amplitude*y)/np.sum(amplitude)
         slip_list_mean.append(slip)
         relative_y = y - slip
         slip_list_std.append(np.sqrt(np.sum(amplitude*(relative_y**2))/np.sum(amplitude)))
-
+        
     data_mean = np.array(slip_list_mean)
     data_std = np.array(slip_list_std)
+    print(f"Mean count: {np.mean(count_list)}")
 
     return data_mean, data_std
 
@@ -190,7 +214,7 @@ def process_data(df, list_col_interest,terrain,geom_to_filter = {},
         if nbr_of_samples_to_consider is not None and nbr_of_samples_to_consider < len(y):
             X = X[:nbr_of_samples_to_consider]
             y = y[:nbr_of_samples_to_consider]
-        data_mean, data_std = process_gma_meshgrid(X, y, x_2_eval)
+        data_mean, data_std = process_gma_meshgrid(X, y, x_2_eval, geom_to_filter[terrain])
         if proportionnal:
             # If list_col_interest contains yaw in the name then we need to divide by the angular velocity
             if "yaw" in list_col_interest[i]:
@@ -230,13 +254,29 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     # Remove any terrain that is not in the list of terrain to plot
     list_terrain = [terrain for terrain in list_terrain if terrain in LIST_OF_TERRAINS_TO_PLOT]
     size = len(list_terrain)
-    fig_mean, axs_mean = plt.subplots(3,size)
-    fig_std, axs_std = plt.subplots(3,size)
-    plt.subplots_adjust(wspace=0.25, hspace=0.25)
-    fig_mean.set_figwidth(3.5*size)
-    fig_mean.set_figheight(3*3)
-    fig_std.set_figwidth(3.5*size)
-    fig_std.set_figheight(3*3)
+    # Add one for the colorbars
+    ratio_list = [8 for i in range(size)]
+    ratio_list.append(1)
+    gs = gridspec.GridSpec(3, size+1, width_ratios=ratio_list)
+    fig_mean = plt.figure()
+    fig_std = plt.figure()
+    plt.subplots_adjust(wspace=1, hspace=0.25)
+    fig_mean.set_figwidth(88/25.4)
+    fig_std.set_figwidth(88/25.4)
+    #fig_mean.set_figheight(3*3)
+    #fig_std.set_figheight(3*3)
+    axs_mean = []
+    axs_std = []
+    for j in range(3):
+        axs_mean.append([])
+        axs_std.append([])
+        for i in range(size+1):
+            axs_mean[j].append(fig_mean.add_subplot(gs[j, i]))
+            axs_std[j].append(fig_std.add_subplot(gs[j, i]))
+    axs_mean = np.array(axs_mean)
+    axs_std = np.array(axs_std)
+    #axs_mean = np.array([[fig_mean.add_subplot(gs[i, j]) for i in range(3)] for j in range(size+1)])
+    #axs_std = np.array([[fig_std.add_subplot(gs[i, j]) for i in range(3)] for j in range(size+1)])
     fig_mean.canvas.manager.set_window_title('Mean Heat Map')
     fig_std.canvas.manager.set_window_title('Standard Deviation Heat Map')
 
@@ -314,58 +354,61 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             list_im_std.append(plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_list = [], filter = filter,
                 shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]], proportionnal = proportionnal))
 
-        axs_mean_plot[0].set_title(f"{terrain}")
-        axs_std_plot[0].set_title(f"{terrain}")
-        axs_mean_plot[-1].set_xlabel("Angular velocity [rad/s]")
-        axs_mean_plot[-1].set_xlabel("Angular velocity [rad/s]")
+
+        axs_mean_plot[0].set_title(f"{terrain[0].upper() + terrain[1:]}")
+        axs_std_plot[0].set_title(f"{terrain[0].upper() + terrain[1:]}")
+        axs_mean_plot[-1].set_xlabel(r"${}^{\mathcal{B}}u_\theta$ [rad/s]")
+        axs_mean_plot[-1].set_xlabel(r"${}^{\mathcal{B}}u_\theta$ [rad/s]")
 
         if i == 0:
             for ax in axs_mean_plot:
-                ax.set_ylabel("Linear velocity [m/s]")
+                ax.set_ylabel(r"${}^{\mathcal{B}}u_x$ [m/s]")
             for ax in axs_std_plot:
-                ax.set_ylabel("Linear velocity [m/s]")
+                ax.set_ylabel(r"${}^{\mathcal{B}}u_x$ [m/s]")
+
+    for i in range (3):
+        for j in range(size):
+            axs_mean[i,j].set_facecolor("black")
+            axs_mean[i,j].set_aspect('equal', 'box')
+            axs_std[i,j].set_facecolor("black")
+            axs_std[i,j].set_aspect('equal', 'box')
 
     if size == 1:
         # Add a colorbar
-        cbar = plt.colorbar(list_im_mean[0], ax=axs_mean_plot[0])
-        cbar.set_label("Slip Body X ss [m/s]")  
-        cbar = plt.colorbar(list_im_mean[1], ax=axs_mean_plot[1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_mean[2], ax=axs_mean_plot[2])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
-        cbar = plt.colorbar(list_im_std[0], ax=axs_std_plot[0])
-        cbar.set_label("Slip Body X ss [m/s]")
-        cbar = plt.colorbar(list_im_std[1], ax=axs_std_plot[1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_std[2], ax=axs_std_plot[2])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
+        cbar = plt.colorbar(list_im_mean[0], cax=axs_mean_plot[0])
+        cbar.set_label(r"${}^{\mathcal{B}}g_x$ [m/s]")  
+        cbar = plt.colorbar(list_im_mean[1], cax=axs_mean_plot[1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_y$ [m/s]")
+        cbar = plt.colorbar(list_im_mean[2], cax=axs_mean_plot[2])
+        cbar.set_label(r"${}^{\mathcal{B}}g_\theta$ [rad/s]")
+        cbar = plt.colorbar(list_im_std[0], cax=axs_std_plot[0])
+        cbar.set_label(r"${}^{\mathcal{B}}g_x$ [m/s]")
+        cbar = plt.colorbar(list_im_std[1], cax=axs_std_plot[1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_y$ [m/s]")
+        cbar = plt.colorbar(list_im_std[2], cax=axs_std_plot[2])
+        cbar.set_label(r"${}^{\mathcal{B}}g_\theta$ [rad/s]")
     else:
         # Add a colorbar
-        cbar = plt.colorbar(list_im_mean[0], ax=axs_mean[0,axs_mean.shape[1]-1])
-        cbar.set_label("Slip Body X ss [m/s]")  
-        cbar = plt.colorbar(list_im_mean[1], ax=axs_mean[1,axs_mean.shape[1]-1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_mean[2], ax=axs_mean[2,axs_mean.shape[1]-1])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
-        cbar = plt.colorbar(list_im_std[0], ax=axs_std[0,axs_std.shape[1]-1])
-        cbar.set_label("Slip Body X ss [m/s]")
-        cbar = plt.colorbar(list_im_std[1], ax=axs_std[1,axs_std.shape[1]-1])
-        cbar.set_label("Slip Body Y ss [m/s]")
-        cbar = plt.colorbar(list_im_std[2], ax=axs_std[2,axs_std.shape[1]-1])
-        cbar.set_label("Slip Body yaw ss [rad/s]")
-    
-    for ax in np.ravel(axs_mean):
-        ax.set_facecolor("black")
-        ax.set_aspect('equal', 'box')
-
-    for ax in np.ravel(axs_std):
-        ax.set_facecolor("black")
-        ax.set_aspect('equal', 'box')
+        cbar = plt.colorbar(list_im_mean[0], cax=axs_mean[0,axs_mean.shape[1]-1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_x$ [m/s]")  
+        cbar = plt.colorbar(list_im_mean[1], cax=axs_mean[1,axs_mean.shape[1]-1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_y$ [m/s]")
+        cbar = plt.colorbar(list_im_mean[2], cax=axs_mean[2,axs_mean.shape[1]-1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_\theta$ [rad/s]")
+        cbar = plt.colorbar(list_im_std[0], cax=axs_std[0,axs_std.shape[1]-1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_x$ [m/s]")
+        cbar = plt.colorbar(list_im_std[1], cax=axs_std[1,axs_std.shape[1]-1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_y$ [m/s]")
+        cbar = plt.colorbar(list_im_std[2], cax=axs_std[2,axs_std.shape[1]-1])
+        cbar.set_label(r"${}^{\mathcal{B}}g_\theta$ [rad/s]")
 
     # Optional label for the colorbar
     mean_filename = f"mean_heat_map_gma_{ROBOT}.pdf"
     std_filename = f"std_heat_map_gma_{ROBOT}.pdf"
     
+    # Increase the width spacing between the subplots
+    #fig_mean.tight_layout()
+    fig_mean.subplots_adjust(wspace=0.5)
     
     fig_mean.savefig(f"tests_figures/{mean_filename}",format="pdf")
     fig_std.savefig(f"tests_figures/{std_filename}",format="pdf")
@@ -425,9 +468,13 @@ def plot_statistics_by_nbr_samples(data_path, geom_path):
             std_std_y.append(dict_results["list_data_std_std"][1])
             std_std_yaw.append(dict_results["list_data_std_std"][2])
 
-            axs[0].scatter(nbr_samples, std_std_x)
-            axs[1].scatter(nbr_samples, std_std_y)
-            axs[2].scatter(nbr_samples, std_std_yaw)
+        axs[0].scatter(nbr_samples, std_std_x)
+        axs[1].scatter(nbr_samples, std_std_y)
+        axs[2].scatter(nbr_samples, std_std_yaw)
+        # Save the nbr_samples and the std_std to a csv file for each terrain for further analysis
+        data = {"nbr_samples":nbr_samples, "std_std_x":std_std_x, "std_std_y":std_std_y, "std_std_yaw":std_std_yaw}
+        df = pd.DataFrame(data)
+        df.to_csv(f"tests_figures/std_std_{ROBOT}_{terrain}.csv")
     
     fig.savefig(f"tests_figures/std_std_{ROBOT}.pdf",format="pdf")
     plt.show()
@@ -450,5 +497,5 @@ if __name__=="__main__":
     proportionnal = parser.parse_args().proportionnal
 
     plot_heat_map_gaussian_moving_average(path, path_to_geom, cline, proportionnal, nbr_of_samples_to_consider=None)
-    #compute_data_statistics(path)
+    compute_data_statistics(path)
     #plot_statistics_by_nbr_samples(path, path_to_geom)
