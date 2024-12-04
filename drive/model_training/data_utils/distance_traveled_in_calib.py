@@ -32,6 +32,15 @@ def extract_distance_travelled(df):
     # print("Number of steps:", df.calib_step.unique())
     print("Distance travelled in calib mode:", distance)
 
+def compute_area(df):
+    x = df["icp_pos_x"].to_numpy()
+    y = df["icp_pos_y"].to_numpy()
+    points = np.concat((x.reshape(x.shape[0], 1), y.reshape(y.shape[0], 1)), axis=1)
+    points_shapely = MultiPoint(points)
+    polygon = concave_hull(points_shapely)
+    area = polygon.area
+    print("Area covered by the driving zone is ", area, "m^2")
+
 if __name__ == "__main__":
     path_to_drive_datasets_fodler = pathlib.Path("drive_datasets")
     path_to_data = path_to_drive_datasets_fodler/"data"
@@ -76,3 +85,4 @@ if __name__ == "__main__":
                                 df_raw = pd.read_pickle(raw_df_path)
                                 # print_column_unique_column(df_raw)
                                 extract_distance_travelled(df_raw)
+                                compute_area(df_raw)

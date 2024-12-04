@@ -70,20 +70,21 @@ def plot_cmd_on_losange(path_to_cmd_vel,df,label,color_ref="grey"):
     ax, area_cmd = plot_command_space(df,ax)
     ax,area_achieved,polygon = extract_minimum_sphere(ax,df["icp_vel_yaw_smoothed"].to_numpy(),df["icp_vel_x_smoothed"].to_numpy(),color_ref, use_ratio=False)
     print("Percentage of the cmd area achieved:", (area_achieved/area_cmd) * 100)
-    list_within = []
-    for i in range(cmd_vel.shape[0]):
-        point = Point(cmd_vel[i,1],cmd_vel[i,0])
+    print("Area covered by icp_odom: ", area_achieved, "m^2")
+    # list_within = []
+    # for i in range(cmd_vel.shape[0]):
+    #     point = Point(cmd_vel[i,1],cmd_vel[i,0])
         
-        list_within.append(point.within(polygon))
+    #     list_within.append(point.within(polygon))
     
     
-    percentage_of_point_not_in = np.round((1- sum(list_within)/len(list_within))*100,2)
+    # percentage_of_point_not_in = np.round((1- sum(list_within)/len(list_within))*100,2)
 
     # print(percentage_of_point_not_in)
     
 
-    ax.set_title(f"{percentage_of_point_not_in} % of the cmd are out of the zone for gravel")
-    ax.scatter(cmd_vel[:,1],cmd_vel[:,0], label="cmd_snow",alpha =0.3)
+    # ax.set_title(f"{percentage_of_point_not_in} % of the cmd are out of the zone for gravel")
+    # ax.scatter(cmd_vel[:,1],cmd_vel[:,0], label="cmd_snow",alpha =0.3)
     ax.legend(label)
 
     return ax
@@ -98,6 +99,7 @@ if __name__ == "__main__":
     color_dict = {"asphalt":"grey", "ice":"blue","gravel":"brown","grass":"green","tile":"pink","boreal":"lightgray"}
     terrain_list_warthog = ["asphalt"] # ["asphalt", "grass", "gravel", "sand", "ice"]
     df_warthog = df_diamond.loc[df_diamond["robot"]=="husky"]
+    print_column_unique_column(df_warthog)
     for i in terrain_list_warthog:
         print(i)
         df_terrain = df_warthog.loc[df_warthog["terrain"]==i]

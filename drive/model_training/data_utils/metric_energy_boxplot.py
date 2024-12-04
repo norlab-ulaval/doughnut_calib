@@ -5,6 +5,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.patches import Ellipse
 import matplotlib as mpl
 import matplotlib.patches as mpatches
+import matplotlib as mpl
 import sys
 import os
 project_root = os.path.abspath("/home/william/workspaces/drive_ws/src/DRIVE/")
@@ -525,7 +526,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     # Add the vertical thick line 
     # axs[0].vlines(list_pos_hfill[-3],ymax=1,ymin=0,color="black",linewidth=linewidth_overall)
     # axs[1].vlines(list_pos_hfill[-3],ymax=1,ymin=0,color="black",linewidth=linewidth_overall)
-    # axs.vlines(list_pos_hfill[-3],ymax=1.5,ymin=0,color="black",linewidth=linewidth_overall)
+    axs.vlines(list_pos_hfill[-3],ymax=1.5,ymin=0,color="black",alpha=0.5,linewidth=0.75, linestyles="--")
     #axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_transl,alpha=alpha_param)
     #axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_total,alpha=alpha_param,label=label[0].upper()+label[1:])
     #    
@@ -542,6 +543,16 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     fig.savefig(path_to_save,dpi=300)
     fig.savefig(path_to_save[:-4]+".png",dpi=300)
     
+
+def print_color_list():
+    color_dict = {"asphalt":"grey", "ice":"blue","gravel":"orange","grass":"green","sand":"orangered","avide":"grey","avide2":"grey","mud":"darkgoldenrod","tile":"lightcoral"}
+    for key in color_dict:
+        print("=========================================")
+        print("Terrain: ", key)
+        print("Matplotlib named color: ", color_dict[key])
+        print("Hex color code: ", mpl.colors.to_hex(color_dict[key], keep_alpha=False))
+
+
 if __name__ =="__main__":
     
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_cmd_raw_slope_metric.csv"
@@ -553,14 +564,14 @@ if __name__ =="__main__":
 
 
     #boxplot(df)
-    boxplot_all_terrain_warthog_robot(df)
+    # boxplot_all_terrain_warthog_robot(df)
     #boxplot_few_robot_few_terrain(df)
     #print(df.columns)
     #plot_scatter_metric(df)
     #plot_histogramme_metric(df)
-    plt.show()
+    # plt.show()
 
+    print_color_list()
 
-
-    print(0.40732918650830996)
-    print(0.75 / 0.40732918650830996)
+    # print(0.40732918650830996)
+    # print(0.75 / 0.40732918650830996)

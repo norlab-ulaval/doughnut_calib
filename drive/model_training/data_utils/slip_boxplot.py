@@ -213,9 +213,9 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     #     j+=2
     
     # Add the vertical thick line 
-    # axs[0].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",linewidth=linewidth_overall)
-    # axs[1].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",linewidth=linewidth_overall)
-    # axs[2].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",linewidth=linewidth_overall)
+    axs[0].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
+    axs[1].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
+    axs[2].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
     #axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_transl,alpha=alpha_param)
     #axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_total,alpha=alpha_param,label=label[0].upper()+label[1:])
     #    
