@@ -9,8 +9,12 @@ import matplotlib.pyplot as plt
 global PATH_TO_METRIC 
 global PATH_TO_SAVE_FOLDER
 from datetime import datetime
-
-
+import sys
+import os
+project_root = os.path.abspath("/home/william/workspaces/drive_ws/src/DRIVE/")
+if project_root not in sys.path:
+    sys.path.append(project_root)
+    
 
 PATH_TO_METRIC = pathlib.Path('drive/model_training/data_utils/metric_config.yaml')
 PATH_TO_SAVE_FOLDER = pathlib.Path('drive_datasets/results_multiple_terrain_dataframe/metric')
@@ -745,7 +749,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
 
         x_masked = x
         y_masked = y 
-        m_slope = y_masked/x_masked
+        m_slope = y_masked[1:]/x_masked[:-1]
         
         m_slope_masked = m_slope[m_slope<np.percentile(m_slope,95)]
         mean_slope = np.median(m_slope_masked)
@@ -753,7 +757,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
 
         metric_raw = 4/np.pi * np.power(np.abs(np.arctan2(y,x) - np.pi/4 ),1)
 
-        metric_mean = np.median(metric_raw)
+        metric_mean = np.median(metric_raw) # 
         std_metric = np.std(metric_raw)
         x_95 = np.percentile(x_masked,95)
         return m_slope,mean_slope,std_slope,metric_mean,std_metric, metric_raw,x_95,y,x
@@ -805,7 +809,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
                 resulting_energy["std_metric_"+energy_name] = std_metric
                 #resulting_energy["metric_raw"+energy_name] = metric_raw
 
-                metric_energy_raw[energy_name] = np.mean(metric_raw,axis=1)
+                metric_energy_raw[energy_name] = np.ravel(metric_raw) #np.mean(metric_raw,axis=1)
                 metric_scatter[f"{x_energy_type}_metric_"+energy_name] = np.ravel(metric_raw)
                 metric_scatter["y_coordinates_"+energy_name] = np.ravel(y_maksed)
                 metric_scatter[f"{x_energy_type}_"+energy_name] = np.ravel(x_masked)
@@ -897,11 +901,18 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
                 metric_energy_raw_wheels["terrain"] = [terrain] * shape
                 metric_energy_raw_cmd["terrain"] = [terrain] * shape 
                 
-                metric_energy_raw_cmd["cmd_body_lin_vel"] =  np.mean(dico_data["cmd_body_lin_vel"],axis=1)
-                metric_energy_raw_cmd["cmd_body_yaw_vel"] =  np.mean(dico_data["cmd_body_yaw_vel"],axis=1)
+                if self.steady_state_only:
+                    cmd_body_lin = np.ravel(dico_data["cmd_body_lin_vel"][:,-40:])
+                    cmd_body_yaw = np.ravel(dico_data["cmd_body_yaw_vel"][:,-40:])
+
+                else: 
+                    cmd_body_lin = np.ravel(dico_data["cmd_body_lin_vel"])
+                    cmd_body_yaw = np.ravel(dico_data["cmd_body_yaw_vel"])
+                metric_energy_raw_cmd["cmd_body_lin_vel"] =  cmd_body_lin #np.ravel(dico_data["cmd_body_lin_vel"])
+                metric_energy_raw_cmd["cmd_body_yaw_vel"] =  cmd_body_yaw #np.ravel(dico_data["cmd_body_yaw_vel"])
                 
-                metric_energy_raw_wheels["cmd_body_lin_vel"] =  np.mean(dico_data["cmd_body_lin_vel"],axis=1)
-                metric_energy_raw_wheels["cmd_body_yaw_vel"] =  np.mean(dico_data["cmd_body_yaw_vel"],axis=1)
+                metric_energy_raw_wheels["cmd_body_lin_vel"] = cmd_body_lin #np.ravel(dico_data["cmd_body_lin_vel"])#np.mean(dico_data["cmd_body_lin_vel"],axis=1)
+                metric_energy_raw_wheels["cmd_body_yaw_vel"] = cmd_body_yaw #np.ravel(dico_data["cmd_body_yaw_vel"])#np.mean(dico_data["cmd_body_yaw_vel"],axis=1)
                 
                 metric_energy_raw_cmd["lim_vel_yaw"] = [lim_vel_yaw] * shape
                 metric_energy_raw_cmd["lim_vel_x"] = [lim_vel_x] * shape

@@ -10,6 +10,9 @@ import argparse
 DRIVE_DEFAULT_PATH = pathlib.Path.cwd()
 print(DRIVE_DEFAULT_PATH)
 
+DRIVE_DEFAULT_PATH = pathlib.Path.cwd()
+print(DRIVE_DEFAULT_PATH)
+
 from drive.model_training.data_utils.dataset_parser import DatasetParser
 from drive.model_training.data_utils.slip_dataset_parser import SlipDatasetParser
 from drive.model_training.data_utils.graph_module import   GraphicProductionDrive
