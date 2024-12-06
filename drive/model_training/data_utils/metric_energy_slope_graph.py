@@ -67,10 +67,10 @@ def plot_metric_scatter(df_res,alpha_param=0.4,suffix="",show_ellipse=False):
                 
                 if first_time_terrain:
                     for i in range(len(x)):
-                        ax.scatter(x[i], y[i], color=color_list[i], marker=list_marker[i_marker],label=df.terrain.loc[i])
+                        ax.scatter(x[i], y[i], color=color_list[i], marker=list_marker[i_marker],label=df.terrain.loc[i],edgecolors='none')
                     first_time_terrain = False
                 else:
-                    ax.scatter(x, y, color=color_list, marker=list_marker[i_marker])
+                    ax.scatter(x, y, color=color_list, marker=list_marker[i_marker],edgecolors='none')
                 
                 if first_time_symbol:
                     ax.scatter(0.7, 0, color="black", marker=list_marker[i_marker], label=f"lim vel_x {lim_vel_x} \n lim vel_yaw {lim_yaw}")
@@ -360,8 +360,6 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
                 color_dict = {"asphalt":"grey", "ice":"blue","gravel":"orange","grass":"green","sand":"darkgoldenrod","avide":"grey","avide2":"grey","mud":"darkgoldenrod","tile":"lightcoral"}
                 
                 
-
-
                 if percentile_filtering:
                     x_masked,y_masked,y_windows_std = moving_average(x,y,percentile=percentile,r = radius)
                     color_list = [color_dict[terrain]]*x_masked.shape[0]
@@ -371,14 +369,14 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
                     else:
                         test=1
                     
-                        #ax.scatter(x_masked, y_masked, color=color_list,alpha=0.9,s=0.8)
-                        ax.plot(x_masked, y_masked, color=color_list[0],alpha=alpha_param,label=terrain,ls=linestyle)
+                        ax.scatter(x_masked, y_masked, color=color_list,alpha=0.9,s=0.8,edgecolors='none')
+                        #ax.plot(x_masked, y_masked, color=color_list[0],alpha=alpha_param,label=terrain,ls=linestyle)
                     
                     
                     
                 else:
                     color_list = [color_dict[terrain]]*x_masked.shape[0]
-                    ax.scatter(x_masked, y_masked, color=color_list,alpha=0.2,s=0.8,label=terrain)
+                    ax.scatter(x_masked, y_masked, color=color_list,alpha=0.2,s=6,label=terrain,edgecolors='none')
                 
             x = df_robot["cmd_metric"+metric_name].to_numpy()
             y = df_robot[y_column+metric_name].to_numpy()
@@ -400,7 +398,7 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
         #ax.legend()
         ax.grid(True)
         ylimit = ax.get_ylim()
-        ax.set_ylim(0.1,ylimit[1])
+        ax.set_ylim(1,ylimit[1])
         ax.set_xlim(0,1)
         ax.set_yscale("log")
 
@@ -410,66 +408,66 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
     legend1 = axs[0].get_legend_handles_labels()
 
     # Combine legends from both axes
-    handles = legend1[0] 
-    labels = legend1[1]
-    
-    husky_labels = labels[:4]
-    husky_handles = handles[:4]
-    warthog_labels = labels[5:]
-    warthog_handles = handles[5:]
-    robot_label = [warthog_labels[-1][0].upper()+ warthog_labels[-1][1:], husky_labels[-1][0].upper()+husky_labels[-1][1:]]
-    robot_handles = [warthog_handles[-1], husky_handles[-1]]
-    
-
-    final_labels = []
-    final_handles = []
-
-    
-    terrain_label = labels[:3] + labels[4:-1]
-    terrain_handle = handles[:3] + handles[4:-1]
-
-    filtered_label = []
-    filtered_handle = []
-    ##
-    for label,handle  in zip(terrain_label,terrain_handle):
-        if (label[0].upper()+label[1:]) in filtered_label:
-            continue
-        else:
-            print(label)
-            filtered_label.append(label[0].upper()+label[1:] )
-            handle.set_linestyle("-")
-            filtered_handle.append(handle)
-    
-    filtered_handle.append(handles[-1])
-    filtered_label.append("All \n terrain")
-
-        
-    
-
-    y_position_l1 = 0.37
-    x_pos_l1 = 0.65
-    # Create a legend in the figure (outside the axes)
-    for i,label in enumerate(final_labels):
-        final_labels[i] = label[0].capitalize() + label[1:]
-    
-    legend_terrain  = fig.legend(filtered_handle, filtered_label, 
-            ncols=2,bbox_to_anchor = (x_pos_l1,y_position_l1),
-            columnspacing=0.4,title=r"$\mathbf{Terrain}$",
-            labelspacing=0.1,
-            handletextpad=0.3)
-    
+    #handles = legend1[0] 
+    #labels = legend1[1]
+    #
+    #husky_labels = labels[:4]
+    #husky_handles = handles[:4]
+    #warthog_labels = labels[5:]
+    #warthog_handles = handles[5:]
+    #robot_label = [warthog_labels[-1][0].upper()+ warthog_labels[-1][1:], husky_labels[-1][0].upper()+husky_labels[-1][1:]]
+    #robot_handles = [warthog_handles[-1], husky_handles[-1]]
+    #
+#
+    #final_labels = []
+    #final_handles = []
+#
+    #
+    #terrain_label = labels[:3] + labels[4:-1]
+    #terrain_handle = handles[:3] + handles[4:-1]
+#
+    #filtered_label = []
+    #filtered_handle = []
+    ###
+    #for label,handle  in zip(terrain_label,terrain_handle):
+    #    if (label[0].upper()+label[1:]) in filtered_label:
+    #        continue
+    #    else:
+    #        print(label)
+    #        filtered_label.append(label[0].upper()+label[1:] )
+    #        handle.set_linestyle("-")
+    #        filtered_handle.append(handle)
+    #
+    #filtered_handle.append(handles[-1])
+    #filtered_label.append("All \n terrain")
+#
+    #    
+    #
+#
+    #y_position_l1 = 0.37
+    #x_pos_l1 = 0.65
+    ## Create a legend in the figure (outside the axes)
+    #for i,label in enumerate(final_labels):
+    #    final_labels[i] = label[0].capitalize() + label[1:]
+    #
+    #legend_terrain  = fig.legend(filtered_handle, filtered_label, 
+    #        ncols=2,bbox_to_anchor = (x_pos_l1,y_position_l1),
+    #        columnspacing=0.4,title=r"$\mathbf{Terrain}$",
+    #        labelspacing=0.1,
+    #        handletextpad=0.3)
+    #
     # Get the bounding box of the legend
-    bbox = legend_terrain.get_window_extent()
-    legend_height = bbox.height / dpi  # Height in inches
-    legend_width =  bbox.width / dpi 
-    
-    print(x_pos_l1,legend_width)
-    fig.legend(robot_handles, robot_label, 
-            bbox_to_anchor = (x_pos_l1+legend_width/2+0.02 ,y_position_l1),
-            ncols=1,
-            columnspacing=0.4,title=r"$\mathbf{Robot}$",
-            labelspacing=0.1,
-            handletextpad=0.3)
+    #bbox = legend_terrain.get_window_extent()
+    #legend_height = bbox.height / dpi  # Height in inches
+    #legend_width =  bbox.width / dpi 
+    #
+    #print(x_pos_l1,legend_width)
+    #fig.legend(robot_handles, robot_label, 
+    #        bbox_to_anchor = (x_pos_l1+legend_width/2+0.02 ,y_position_l1),
+    #        ncols=1,
+    #        columnspacing=0.4,title=r"$\mathbf{Robot}$",
+    #        labelspacing=0.1,
+    #        handletextpad=0.3)
     
     
     #fig.legend(final_handles, final_labels, 
@@ -477,8 +475,8 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
     #        columnspacing=0.3,title=r"$\textbf{P95 of Energy}$",
     #        labelspacing=0.1)
     # Reput the husky line in dashe
-    for handle in husky_handles:
-        handle.set_linestyle("--")
+    #for handle in husky_handles:
+    #    handle.set_linestyle("--")
     #for handle in warthog_handles:
     #    handle.set_linestyle("-")
     for ax in np.ravel(axs[1:]):
@@ -494,6 +492,9 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
     
     axs[n_size-2].set_xlabel("Difficulty metric [SI]")
 
+    axs[0].hlines(6250,0,1)
+    axs[0].hlines(500*4**2/2,0,1)
+    axs[0].hlines(500*0.1**2/2,0,1,color="red")
     fig.savefig(fname=path_to_save,dpi=dpi)
     #axs[2].set_xticklabels([])
     print(gs)
@@ -638,11 +639,16 @@ if __name__ =="__main__":
     df_res_warthog = pd.read_csv("drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_cmd_raw_slope_metric_scatter.csv")
     df_res_husky = pd.read_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric_scatter.csv")
     
+    
+    df_res_warthog = df_res_warthog.loc[(df_res_warthog.terrain == "ice")| (df_res_warthog.terrain == "grass")]
+    df_res_husky = df_res_husky.loc[df_res_husky.terrain == "mud"]
+
     df_res_husky = df_res_husky.loc[df_res_husky.terrain != "tile"]
-    df_res = pd.concat([df_res_husky,df_res_warthog],axis=0) 
+    #df_res_warthog = df_res_warthog.loc[df_res_warthog.terrain == "ice"]
+    df_res = df_res_warthog#pd.concat([df_res_husky,df_res_warthog],axis=0) 
     only_total_energy = True
     print(df_res_husky.terrain.unique())
-    plot_metric_scatter_scatter(df_res,alpha_param=1.0,suffix="",percentile_filtering=True,
+    plot_metric_scatter_scatter(df_res,alpha_param=1.0,suffix="",percentile_filtering=False,
                                 percentile=95,radius= 0.06,
                                 only_total_energy = only_total_energy)#y_column="wheels_metric"), y_column="cmd_diff_icp"
     
@@ -650,9 +656,10 @@ if __name__ =="__main__":
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_cmd_raw_slope_metric.csv"
     df_warthog = pd.read_csv(path_to_raw_result)
     
+
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
     df_husky = pd.read_csv(path_to_raw_result)
-
+    
     print(df_husky.terrain.unique())
     
     df = pd.concat([df_warthog,df_husky],axis=0)
