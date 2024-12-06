@@ -47,17 +47,21 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     plt.rc('font', **font)
     plt.rc('font', family='serif', serif='Times')
     plt.rc('text', usetex=True)
-    plt.rc('xtick', labelsize=9)
-    plt.rc('ytick', labelsize=9)
+    plt.rc('xtick', labelsize=10)
+    plt.rc('ytick', labelsize=10)
     plt.rc('axes', labelsize=10)
     mpl.rcParams['lines.dashed_pattern'] = [2, 2]
     mpl.rcParams['lines.linewidth'] = 1.0
 
-    fig, axs = plt.subplots(3,1)
-    fig.set_figwidth = 88/25.4
-    fig.set_figheight = 4.58
+    fig = plt.figure(figsize=(88/25.4, 4.58))
+    ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312)
+    ax3 = fig.add_subplot(313)
+    axs = [ax1, ax2, ax3]
+    # fig.set_figwidth = 88/25.4
+    # fig.set_figheight = 4.58
     
-    fig.subplots_adjust(hspace=0.2 ,wspace=0.4)
+    fig.subplots_adjust(left=0.2)
     
     list_array_x = []
     list_array_y = []
@@ -138,7 +142,6 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
             pos_labels += delta_x + (delta_same_terrain/2) 
             list_pos_labels.append(pos_labels)
             pos_labels += (delta_same_terrain/2)
-            #pos_labels += (value/2 * delta_same_terrain) 
         else:
             position += delta_x
             pos_labels += delta_x
@@ -151,7 +154,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     box1 = axs[0].boxplot(list_array_x,whis=(2.5, 97.5),showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
     box2 = axs[1].boxplot(list_array_y,whis=(2.5, 97.5),showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
     box3 = axs[2].boxplot(list_array_rot,whis=(2.5, 97.5),showfliers=False,patch_artist=True, positions=list_position,widths=box_width)
-    iterator = 0
+
     for box, color_list in zip([box1,box2,box3], [list_color_x, list_color_y, list_color_rot]):
         
         for patch, color in zip(box['boxes'], color_list):
@@ -161,35 +164,17 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
         # Change the median line color to black
         for median in box['medians']:
             median.set_color('black')
-    #list_terrain_x_ticks = [terrain[0].capitalize() + terrain[1:] for terrain in list_terrain]
-    #axs[0].set_xticks(list_pos_labels,labels=[])
-    #axs[1].set_xticks(list_pos_labels,labels=[])
-    #axs[2].set_xticks(list_pos_labels,labels=list_terrain_x_ticks)
 
     for ax in np.ravel(axs):
         ax.set_xticks([])       # Remove the ticks
         ax.set_xticklabels([])  # Remove the labels
         
-    axs[0].set_ylabel("Longitudinal slip [m/s]")
-    axs[1].set_ylabel("Lateral slip [m/s]")
-    axs[2].set_ylabel("Angular slip [rad/s]")
+    axs[0].set_ylabel("Longitudinal slip \n (m/s)")
+    axs[1].set_ylabel("Lateral slip \n (m/s)")
+    axs[2].set_ylabel("Angular slip (rad/s)")
     tick_labels = ['Asphalt', 'Grass', 'Gravel', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs[2].set_xticks(ticks, tick_labels)
-
-    # Extract legends from both axes
-    #legend1 = axs[0].get_legend_handles_labels()
-    # Combine legends from both axes
-    #handles = legend1[0] 
-    #labels = legend1[1]
-
-    #print(labels)
-    #final_handles = [handles[4],handles[5]]
-    #final_labels = [labels[4][0].capitalize() + labels[4][1:],labels[5][0].capitalize() + labels[5][1:]]
-    
-    #axs[0].legend(handles=final_handles,labels=final_labels)
-    #axs[1].set_ylabel("translationnal_energy_metric")
-    #axs[2].set_ylabel("total_energy_metric")
 
     for ax in np.ravel(axs):
         ax.set_xlim(delta_x/2,list_pos_hfill[-1])
@@ -197,35 +182,11 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     axs[0].set_ylim(-0.1, 2.1)
     axs[1].set_ylim(-0.1, 2.1)
     axs[2].set_ylim(-0.1, 6)
-
-    ## Add the color fill 
-    j = 1 
-    print(list_position)
-    print(list_pos_hfill)
-
-    print(list_terrain)
-    # for color_x,color_y,color_rot,label  in zip(list_color_x,list_color_y,list_color_rot,list_terrain_reordered_rot):
-        
-    #     axs[0].fill_between(list_pos_hfill[j-1:j+1],y1=-6, y2=6,color="lightgrey",alpha=alpha_param)
-    #     axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=-6 , y2=6,color="lightgrey",alpha=alpha_param)
-    #     axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=-6, y2=6,color="lightgrey",alpha=alpha_param,label=label[0].upper()+label[1:])
-        
-    #     j+=2
     
     # Add the vertical thick line 
     axs[0].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
     axs[1].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
     axs[2].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
-    #axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_transl,alpha=alpha_param)
-    #axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_total,alpha=alpha_param,label=label[0].upper()+label[1:])
-    #    
-    # handles, labels = axs[2].get_legend_handles_labels()
-    # print(handles)
-    # print(labels)
-    # overall = mpatches.Patch(edgecolor='black',facecolor="white")
-    # handles[-1] = overall
-    # fig.legend(handles,labels,bbox_to_anchor= (0.78,0.125),ncols=3)
-    #fig.tight_layout()
 
     fig.savefig(path_to_save,dpi=300)
     fig.savefig(path_to_save[:-4]+".png",dpi=300)

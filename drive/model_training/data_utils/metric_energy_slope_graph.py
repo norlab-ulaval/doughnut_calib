@@ -314,7 +314,7 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
         fig.set_figwidth(88/25.4)
         fig.set_figheight(3.0)
         list_y_coordinates = ["_total_energy_metric"]
-        labels = ["$95^{th}$ percentile \n kinetic energy [J]"]
+        labels = ["$95^{th}$ percentile \n kinetic energy (J)"]
         # Create subplots with gridspec
         gs = gridspec.GridSpec(2, 1, wspace=0.4,height_ratios=[4,3], figure=fig)
         ax1 = fig.add_subplot(gs[0])

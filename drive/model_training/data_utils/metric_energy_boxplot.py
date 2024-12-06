@@ -193,15 +193,16 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     plt.rc('font', **font)
     plt.rc('font', family='serif', serif='Times')
     plt.rc('text', usetex=True)
-    plt.rc('xtick', labelsize=9)
-    plt.rc('ytick', labelsize=9)
+    plt.rc('xtick', labelsize=10)
+    plt.rc('ytick', labelsize=10)
     plt.rc('axes', labelsize=10)
     mpl.rcParams['lines.dashed_pattern'] = [2, 2]
     mpl.rcParams['lines.linewidth'] = 1.0
 
-    fig, axs = plt.subplots(1,1)
-    fig.set_figwidth = 88/25.4
-    fig.set_figheight = 4.58
+    fig = plt.figure(figsize=(88/25.4, 3))
+    axs = fig.add_subplot(111)
+    
+    fig.subplots_adjust(left=0.2)
     
     # fig.subplots_adjust(hspace=0.2 ,wspace=0.4)
     
@@ -314,7 +315,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
         
     # axs[0].set_ylabel("Difficulty metric \n rotationnal energy [J]")
     # axs[1].set_ylabel("Difficulty metric \n translationnal energy [J]")
-    axs.set_ylabel("Difficulty metric \n total energy [SI]")
+    axs.set_ylabel("Difficulty metric \n total energy (SI)")
 
     # Extract legends from both axes
     #legend1 = axs[0].get_legend_handles_labels()
@@ -395,9 +396,9 @@ if __name__ =="__main__":
     #print(df.columns)
     #plot_scatter_metric(df)
     #plot_histogramme_metric(df)
-    # plt.show()
+    plt.show()
 
-    print_color_list()
+    # print_color_list()
 
     # print(0.40732918650830996)
     # print(0.75 / 0.40732918650830996)
