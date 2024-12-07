@@ -13,7 +13,7 @@ from matplotlib import gridspec
 ROBOT = "warthog"
 
 if ROBOT == "husky":
-    DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/husky_metric_to_watermelon.csv"
     GEOM_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/husky_geom_limits_by_terrain_for_filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
     AXIS_LIM = (-2,2)
     # Gaussian parameters
@@ -23,7 +23,7 @@ if ROBOT == "husky":
     SIGMA_Y = 0.25
     RHO = 0
 elif ROBOT == "warthog":
-    DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/warthog_metric_to_watermelon.csv"
     GEOM_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/warthog_geom_limits_by_terrain_for_filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
     AXIS_LIM = (-6,6)
     # Gaussian parameters
@@ -34,8 +34,10 @@ elif ROBOT == "warthog":
     RHO = 0
 TOGGLE_CLINE = True
 TOGGLE_PROPORTIONNAL = False
-#LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt"]#, "tile"]
-LIST_OF_TERRAINS_TO_PLOT = ["ice", "grass"]
+LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt"]#, "tile"]
+SQUARES_TO_ANALYZE = [{'x': -0.5, 'y':4, 'width': 1, 'height': 1, 'axis': 'linear'},
+                      {'x': 3.5, 'y':-1, 'width': 0.5, 'height': 2, 'axis': 'yaw'},]
+#LIST_OF_TERRAINS_TO_PLOT = ["ice", "grass"]
 
 font = {'family' : 'normal',
         'weight' : 'bold',
@@ -51,9 +53,14 @@ mpl.rcParams['lines.dashed_pattern'] = [2, 2]
 mpl.rcParams['lines.linewidth'] = 1.0 
 
 # List of cline factor
-CLINE_DICT = {"slip_body_x_ss":[-0.3, 0.3],
-               "slip_body_y_ss":[-0.2, 0.2], 
-               "slip_body_yaw_ss":[-3, 3]}
+#CLINE_DICT = {"slip_body_x_ss":[-0.3, 0.3],
+#               "slip_body_y_ss":[-0.2, 0.2], 
+#               "slip_body_yaw_ss":[-3, 3]}
+CLINE_DICT = {"first_window_metric":[],
+              "last_window_metric":[],
+              "last_window_cmd_total_energy_metric":[],
+              "last_window_cmd_rotationnal_energy_metric":[],
+              "last_window_cmd_translationnal_energy_metric":[]}
 
 
 def gaussian_2d(x, y, mu_x=MU_X, mu_y=MU_Y, sigma_x=SIGMA_X, sigma_y=SIGMA_Y, rho=RHO):
@@ -116,7 +123,7 @@ def plot_image(ax, X_train, mean_prediction, y, x_2_eval, cline_list = [], filte
     if ax == None:
         fig, ax = plt.subplots(1,1)
 
-    norm = mcolors.Normalize(vmin=-vmax, vmax=vmax)
+    norm = mcolors.Normalize(vmin=0, vmax=vmax)
     if proportionnal:
         norm = mcolors.LogNorm(vmin=0.1, vmax=vmax)
 
@@ -247,7 +254,8 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     with open(geom_path, 'rb') as file:
         geom_by_terrain = pickle.load(file)["body"]
 
-    df = pd.read_pickle(data_path)
+    #df = pd.read_pickle(data_path)
+    df = pd.read_csv(data_path)
 
     list_terrain = list(df.terrain.unique())
     # Remove any terrain that is not in the list of terrain to plot
@@ -256,16 +264,17 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     # Add one for the colorbars
     ratio_list = [30 for i in range(size)]
     ratio_list.append(1)
-    gs = gridspec.GridSpec(3, size+1, width_ratios=ratio_list)
+    nbr_rows = 5
+    gs = gridspec.GridSpec(nbr_rows, size+1, width_ratios=ratio_list)
     fig_mean = plt.figure()
     fig_std = plt.figure()
-    fig_mean.set_figwidth(88/25.4)
-    fig_std.set_figwidth(88/25.4)
+    fig_mean.set_figwidth(88*2/25.4)
+    fig_std.set_figwidth(88*2/25.4)
     #fig_mean.set_figheight(3*3)
     #fig_std.set_figheight(3*3)
     axs_mean = []
     axs_std = []
-    for j in range(3):
+    for j in range(nbr_rows):
         axs_mean.append([])
         axs_std.append([])
         for i in range(size+1):
@@ -282,8 +291,10 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         list_col_interest = ["slip_body_x_ss","slip_body_yaw_ss"]
         list_colormap = ["PuOr", "PiYG"]
     else:
-        list_col_interest = ["slip_body_x_ss","slip_body_y_ss","slip_body_yaw_ss"]
-        list_colormap = ["PuOr", "PuOr", "PiYG"]
+        #list_col_interest = ["slip_body_x_ss","slip_body_y_ss","slip_body_yaw_ss"]
+        #list_colormap = ["PuOr", "PuOr", "PiYG"]
+        list_col_interest = ["first_window_metric", "last_window_metric", "last_window_cmd_total_energy_metric", "last_window_cmd_rotationnal_energy_metric", "last_window_cmd_translationnal_energy_metric"]
+        list_colormap = ["Greys", "Oranges", "Greens", "Blues", "Purples"]
     
     # Create a list by terrain for the data mean, std and y
     terrain_dict = {}
@@ -294,7 +305,7 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
         print(f"Processing terrain: {terrain}")
         
         df_terrain = df.loc[df["terrain"]==terrain]
-        col_x_y = ["cmd_body_yaw_lwmean","cmd_body_x_lwmean"]
+        col_x_y = ["cmd_body_yaw_mean","cmd_body_x_mean"]
         
         dict_results = process_data(df_terrain, list_col_interest, terrain, geom_to_filter = geom_by_terrain, 
                                     list_colormap = list_colormap, col_x_y = col_x_y, proportionnal = proportionnal,
@@ -323,6 +334,8 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             else:
                 dict_vmax_std[list_colormap[i]] = vmax_std
 
+    # Create a csv for all the data
+    data = {"terrain":[], "cmd_body_yaw_mean":[], "cmd_body_x_mean":[], "first_window_metric":[], "last_window_metric":[], "last_window_cmd_total_energy_metric":[], "last_window_cmd_rotationnal_energy_metric":[], "last_window_cmd_translationnal_energy_metric":[]}
     for i in range(size):
         terrain = list_terrain[i]
         print(f"Processing terrain: {terrain}")
@@ -358,6 +371,12 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             list_im_std.append(plot_image(axs_std_plot[j], X, data_std, y, x_2_eval, cline_list = [], filter = filter,
                 shape = X_2do.shape, colormap = list_colormap[j], x_lim = x_lim, y_lim = y_lim, vmax = dict_vmax_std[list_colormap[j]], proportionnal = proportionnal))
 
+        for x in range(len(np.ravel(x_2_eval[:,0]))):
+            data["terrain"].append(terrain)
+            data["cmd_body_yaw_mean"].append(np.ravel(x_2_eval[:,0])[x])
+            data["cmd_body_x_mean"].append(np.ravel(x_2_eval[:,1])[x])
+            for j in range(len(list_col_interest)):
+                data[f"{list_col_interest[j]}"].append(np.ravel(terrain_dict[terrain]["list_data_mean"][j])[x])
 
         axs_mean_plot[0].set_title(f"{terrain[0].upper() + terrain[1:]}")
         axs_std_plot[0].set_title(f"{terrain[0].upper() + terrain[1:]}")
@@ -370,7 +389,20 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             for ax in axs_std_plot:
                 ax.set_ylabel(r"${}^{B}u_x$ (m/s)", labelpad=0.1)
 
+    df = pd.DataFrame(data)
+    df.to_csv(f"tests_figures/mean_heat_map_gma_{ROBOT}_metric.csv")
+
+    # Add white rectangles on all the plots from -5 to -4 and 4 to 5 on x axis with the full height of the plot
+    """
     for i in range(3):
+        for j in range(size):
+            axs_mean[i,j].add_patch(plt.Rectangle((-5, -5), 1, 10, fill=True, color='white', alpha=1))
+            axs_mean[i,j].add_patch(plt.Rectangle((4, -5), 1, 10, fill=True, color='white', alpha=1))
+            axs_std[i,j].add_patch(plt.Rectangle((-5, -5), 1, 10, fill=True, color='white', alpha=1))
+            axs_std[i,j].add_patch(plt.Rectangle((4, -5), 1, 10, fill=True, color='white', alpha=1))
+    """
+            
+    for i in range(nbr_rows):
         for j in range(size):
             axs_mean[i,j].set_facecolor("black")
             axs_mean[i,j].set_aspect('equal', 'box')
@@ -381,38 +413,57 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             if i != 2:
                 axs_mean[i,j].set_xticks([])
 
+    # Draw the squares to analyze
+    for i in range(size):
+        terrain = list_terrain[i]
+        geom = geom_by_terrain[terrain]
+        for square in SQUARES_TO_ANALYZE:
+            for j in range(nbr_rows):
+                axs_mean[j,i].add_patch(plt.Rectangle((square['x'], square['y']), square['width'], square['height'], fill=False, color='white', alpha=1))
+                axs_std[j,i].add_patch(plt.Rectangle((square['x'], square['y']), square['width'], square['height'], fill=False, color='white', alpha=1))
+
+
     if size == 1:
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], cax=axs_mean_plot[0], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_x$ (m/s)", labelpad=0.1)  
+        cbar.set_label(r"Mean transient\\state metric", labelpad=0.1)  
         cbar = plt.colorbar(list_im_mean[1], cax=axs_mean_plot[1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_y$ (m/s)", labelpad=0.1)
+        cbar.set_label(r"Mean steady\\state metric", labelpad=0.1)
         cbar = plt.colorbar(list_im_mean[2], cax=axs_mean_plot[2], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_\theta$ (rad/s)", labelpad=0.1)
+        cbar.set_label(r"Mean steady\\state energy", labelpad=0.1)
         cbar = plt.colorbar(list_im_std[0], cax=axs_std_plot[0], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_x$ (m/s)", labelpad=0.1)
+        cbar.set_label(r"Mean transient\\state metric", labelpad=0.1)
         cbar = plt.colorbar(list_im_std[1], cax=axs_std_plot[1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_y$ (m/s)", labelpad=0.1)
-        cbar = plt.colorbar(list_im_std[2], cax=axs_std_plot[2], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_\theta$ (rad/s)", labelpad=0.1)
+        cbar.set_label(r"Mean steady\\state metric", labelpad=0.1)
+        cbar = plt.colorbar(list_im_std[2], cax=axs_mean_plot[2], pad = 0.1, shrink=0.5)
+        cbar.set_label(r"Mean steady\\state energy", labelpad=0.1)
     else:
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], cax=axs_mean[0,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_x$ (m/s)", labelpad=0.1)  
+        cbar.set_label(r"Mean transient\\state metric", labelpad=0.1)  
         cbar = plt.colorbar(list_im_mean[1], cax=axs_mean[1,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_y$ (m/s)", labelpad=0.1)
+        cbar.set_label(r"Mean steady\\state metric", labelpad=0.1)
         cbar = plt.colorbar(list_im_mean[2], cax=axs_mean[2,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_\theta$ (rad/s)")
+        cbar.set_label(r"Mean steady\\state total energy", labelpad=0.1)
+        cbar = plt.colorbar(list_im_mean[3], cax=axs_mean[3,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
+        cbar.set_label(r"Mean steady\\state rotationnal\\energy", labelpad=0.1)
+        cbar = plt.colorbar(list_im_mean[4], cax=axs_mean[4,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
+        cbar.set_label(r"Mean steady\\state translationnal\\energy", labelpad=0.1)
         cbar = plt.colorbar(list_im_std[0], cax=axs_std[0,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_x$ (m/s)", labelpad=0.1)
+        cbar.set_label(r"Mean transient\\state metric", labelpad=0.1)
         cbar = plt.colorbar(list_im_std[1], cax=axs_std[1,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_y$ (m/s)", labelpad=0.1)
+        cbar.set_label(r"Mean steady\\state metric", labelpad=0.1)
         cbar = plt.colorbar(list_im_std[2], cax=axs_std[2,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_\theta$ (rad/s)", labelpad=0.1)
+        cbar.set_label(r"Mean steady\\state energy", labelpad=0.1)
+        cbar = plt.colorbar(list_im_std[3], cax=axs_std[3,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
+        cbar.set_label(r"Mean steady\\state rotationnal\\energy", labelpad=0.1)
+        cbar = plt.colorbar(list_im_std[4], cax=axs_std[4,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
+        cbar.set_label(r"Mean steady\\state translationnal\\energy", labelpad=0.1)
+
 
     # Optional label for the colorbar
-    mean_filename = f"mean_heat_map_gma_{ROBOT}.pdf"
-    std_filename = f"std_heat_map_gma_{ROBOT}.pdf"
+    mean_filename = f"mean_heat_map_gma_{ROBOT}_metric.pdf"
+    std_filename = f"std_heat_map_gma_{ROBOT}_metric.pdf"
     
     # Increase the width spacing between the subplots
     #fig_mean.tight_layout()

@@ -232,7 +232,7 @@ def scatter_diamond_displacement_graph(df_all_terrain, terrains_to_plot = [],
             if "Wheels_vel" in list_of_plot_to_do:
                 axs[k,i].scatter(df["cmd_right_wheels"],df["cmd_left_wheels"],color="orange",alpha=alpha_parama, s=MARKER_SIZE)
                 axs[k,i].scatter(df["odom_speed_right_wheels"],df["odom_speed_left_wheels"],label='Mean of wheel steady-state speed',color="green",alpha=alpha_parama, s=MARKER_SIZE)
-                #axs[k,i].set_title(r"Impact of a terrain on the wheel frame command ${}^{W}\mathbf{u}$")
+                axs[k,i].set_title(f"{terrain[0].upper() + terrain[1:]}")
                 axs[k,i].set_facecolor(COLOR_DICT[terrain])
                 if i == 0:
                     axs[k,i].set_ylabel(r"Left wheel\\speed ($\omega_{l-ss}$) (rad/s)")
@@ -257,9 +257,9 @@ def scatter_diamond_displacement_graph(df_all_terrain, terrains_to_plot = [],
                 axs[k,i].scatter(df["cmd_body_yaw_lwmean"],df["cmd_body_x_lwmean"],color = "orange",label='Command',alpha=alpha_parama, s=MARKER_SIZE)
                 axs[k,i].scatter(df["icp_vel_yaw_smoothed"],df["icp_vel_x_smoothed"],color = "blue",label='Mean of body steady-state speed',alpha=alpha_parama, s=MARKER_SIZE) 
                 axs[k,i].set_facecolor(COLOR_DICT[terrain])        
-                axs[k,i].set_xlabel(r"Angular\\speed (${}^{\mathcal{B}}\dot{z_\theta}$) (rad/s)")
+                axs[k,i].set_xlabel(r"Angular\\speed (${}^{B}\dot{z_\theta}$) (rad/s)")
                 if i == 0:
-                    axs[k,i].set_ylabel(r"Longitudinal\\speed (${}^{\mathcal{B}}\dot{p_x}$) (m/s)")
+                    axs[k,i].set_ylabel(r"Longitudinal\\speed (${}^{B}\dot{p_x}$) (m/s)")
                 #axs[k,i].set_title(r"Impact of a terrain on the body frame command ${}^{W}\mathbf{u}$")
                 axs[k,i].set_ylim((-y_lim,y_lim))
                 axs[k,i].set_xlim((-x_lim,x_lim))
@@ -295,13 +295,13 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
 
             if "Accel_x" in list_of_plot_to_do:
                 print(f"Accel x on {terrain}")
-                #axs[k,i].set_title(f"acceleration_x on {terrain}\n ") # (ICP smooth by spline,yaw=imu)     
+                axs[k,i].set_title(f"{terrain[0].upper() + terrain[1:]}")
                 plot_histogramme(axs[k,i],df,"imu_acceleration_x",transient_only_flag=transientflag,nb_bins=nb_bins,x_lim=x_lim,densitybool=densitybool)
                 axs[k,i].set_facecolor(COLOR_DICT[terrain])
                 vx_acceleration_theo = column_type_extractor(df,"step_frame_vx_theoretical_acceleration")
                 axs[k,i].hist(vx_acceleration_theo,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins, color="orange")
                 axs[k,i].vlines(np.array([-5,5]),0,axs[k,i].get_ylim()[1],color="red")
-                axs[k,i].set_xlabel(r"Longitudinal acceleration" + "\n" + r"( ${}^{\mathcal{B}}\ddot{p_x}) (m/s^2)$")
+                axs[k,i].set_xlabel(r"Longitudinal acceleration" + "\n" + r"( ${}^{B}\ddot{p_x})$ (m/s\textsuperscript{2})")
                 list_of_plot_to_do.remove("Accel_x")
                 continue
 
@@ -318,7 +318,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 centripete_acceleration = cmd_vlin * cmd_vyaw
                 axs[k,i].hist(centripete_acceleration,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins,color="magenta")
                 #axs[k,i].vlines(np.array([-5,5]),0,axs[k,i].get_ylim()[1],color="red")
-                axs[k,i].set_xlabel(r"Lateral acceleration" + "\n" + r"( ${}^{\mathcal{B}}\ddot{p_y}) (m/s^2)$")
+                axs[k,i].set_xlabel(r"Lateral acceleration" + "\n" + r"( ${}^{B}\ddot{p_y})$ (m/s\textsuperscript{2})")
                 list_of_plot_to_do.remove("Accel_y")
                 continue
 
@@ -341,7 +341,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 axs[k,i].hist(vyaw_acceleration,density=densitybool,alpha=param_alpha,range=x_lim,bins=nb_bins, color="orange")
                 axs[k,i].set_facecolor(COLOR_DICT[terrain])
                 axs[k,i].vlines(np.array([-4,4]),0,axs[k,i].get_ylim()[1],color="red")
-                axs[k,i].set_xlabel(r"Angular acceleration" + "\n" + r"(${}^{\mathcal{B}}\ddot{p_\theta}) (rad/s^2)$")
+                axs[k,i].set_xlabel(r"Angular acceleration" + "\n" + r"(${}^{B}\ddot{p_\theta})$ (rad/s\textsuperscript{2})")
                 list_of_plot_to_do.remove("Accel_yaw_imu")
                 continue
 
@@ -352,7 +352,7 @@ def acceleration_histogram(df_all_terrain, terrains_to_plot = [],
                 #axs[k,i].set_title(r"Impact of a terrain on the lateral speed")
                 axs[k,i].set_facecolor(COLOR_DICT[terrain])
                 axs[k,i].vlines(np.array([0]),0,axs[k,i].get_ylim()[1],color="orange", lw=2)
-                axs[k,i].set_xlabel(r"Velocity \\ ( ${}^{\mathcal{B}}\dot{z_y}$) (m/s)")
+                axs[k,i].set_xlabel(r"Velocity \\ ( ${}^{B}\dot{z_y}$) (m/s)")
                 list_of_plot_to_do.remove("Slip_body_y")
                 continue
                 
@@ -446,7 +446,7 @@ def plot_figure_7():
                 ncol=4 )
     """
 
-    plt.tight_layout(rect=[0, 0.2, 1, 1])  # Leave space at the bottom for the legend
+    plt.tight_layout(rect=[0, 0.08, 1, 1])  # Leave space at the bottom for the legend
     # Add a legend at the bottom of the figure
     # Create custom elements not present in subplots
     command_marker = Line2D([0], [0], color='orange', lw=2, label='Command', linestyle=None, marker='o', alpha=0.5)
@@ -462,9 +462,9 @@ def plot_figure_7():
         patch.set_linewidth(1)
 
     # Combine elements for the legend
-    handles = [command_marker, green_marker, measured_marker, controller_limit_c, controller_limit_n, ice_patch, grass_patch]
-    labels = [r'$\mathbf{u}$', r'${}^{W}\mathbf{z}$', r'${}^{B}\mathbf{z}$', r'$\mathcal{C}$', r'$\mathcal{N}$', r'Ice', r'Grass']
-    fig.legend(handles, labels, loc='lower center', ncol=2)
+    handles = [command_marker, green_marker, measured_marker, controller_limit_c, controller_limit_n]
+    labels = [r'$\mathbf{u}$', r'${}^{W}\mathbf{z}$', r'${}^{B}\mathbf{z}$', r'$\mathcal{C}$', r'$\mathcal{N}$']
+    fig.legend(handles, labels, loc='lower center', ncol=3, prop={'size': 10})
     fig.savefig("tests_figures/fig7.pdf",format="pdf")
 
     """
@@ -531,7 +531,7 @@ def plot_figure_9():
     axs_hist[1,1].set_ylabel("")
     axs_hist[2,1].set_ylabel("")
 
-    plt.tight_layout(rect=[0, 0.15, 1, 1])  # Leave space at the bottom for the legend
+    plt.tight_layout(rect=[0, 0.08, 1, 1])  # Leave space at the bottom for the legend
     # Add a legend at the bottom of the figure
     # Create custom elements not present in subplots
     command_marker = Line2D([0], [0], color='orange', lw=2, label='Command', linestyle=None, marker='o', alpha=0.5)
@@ -546,9 +546,9 @@ def plot_figure_9():
         patch.set_linewidth(1)
 
     # Combine elements for the legend
-    handles = [command_marker, green_marker, measured_marker, controller_limit_c, ice_patch, grass_patch]
-    labels = [r'$\mathbf{u}$', r'${}^{W}\mathbf{z}$', r'${}^{B}\mathbf{z}$', r'$\mathcal{C}$', 'Ice', 'Grass']
-    fig.legend(handles, labels, loc='lower center', ncol=2)
+    handles = [command_marker, green_marker, measured_marker, controller_limit_c]
+    labels = [r'$\mathbf{u}$', r'${}^{W}\mathbf{z}$', r'${}^{B}\mathbf{z}$', r'$\mathcal{C}$']
+    fig.legend(handles, labels, loc='lower center', ncol=2, prop={'size': 10})
     fig.savefig("tests_figures/fig9.pdf",format="pdf")
     
 
