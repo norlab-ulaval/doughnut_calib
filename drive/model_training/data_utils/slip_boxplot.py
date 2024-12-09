@@ -107,6 +107,13 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
         tmp = _list[-2]
         _list[-2] = _list[-1]
         _list[-1] = tmp
+    for _list in [list_array_x, list_color_x, list_terrain_reordered_x]:
+        tmp = _list[-2]
+        _list[-2] = _list[-3]
+        _list[-3] = tmp
+        tmp = _list[0]
+        _list[0] = _list[1]
+        _list[1] = tmp
     # 
     # Add the overall 
     list_array_x.append([item for sublist in list_array_x for item in sublist])
@@ -172,7 +179,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     axs[0].set_ylabel("Longitudinal slip \n (m/s)")
     axs[1].set_ylabel("Lateral slip \n (m/s)")
     axs[2].set_ylabel("Angular slip (rad/s)")
-    tick_labels = ['Asphalt', 'Grass', 'Gravel', 'Sand', 'Ice', 'Overall']
+    tick_labels = ['Asphalt', 'Gravel', 'Grass', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs[2].set_xticks(ticks, tick_labels)
 
@@ -195,21 +202,33 @@ if __name__ =="__main__":
     
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
     df_warthog = pd.read_pickle(path_to_raw_result)
+    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_lwmean"]) <= 4.0)]
     # path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
     # df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     # df = pd.concat([df_warthog,df_husky],axis=0)
 
-    print_column_unique_column(df_warthog)
+    # print_column_unique_column(df_warthog)
     #boxplot(df)
     boxplot_all_terrain_warthog_robot(df_warthog)
     #boxplot_few_robot_few_terrain(df)
     #print(df.columns)
     #plot_scatter_metric(df)
     #plot_histogramme_metric(df)
+    median_long_ice = np.median(np.abs(filtered_df.slip_body_x_ss.loc[filtered_df["terrain"] == "ice"]))
+    median_lat_ice = np.median(np.abs(filtered_df.slip_body_y_ss.loc[filtered_df["terrain"] == "ice"]))
+    median_yaw_ice = np.median(np.abs(filtered_df.slip_body_yaw_ss.loc[filtered_df["terrain"] == "ice"]))
+    median_long_grass = np.median(np.abs(filtered_df.slip_body_x_ss.loc[filtered_df["terrain"] != "ice"]))
+    median_lat_grass = np.median(np.abs(filtered_df.slip_body_y_ss.loc[filtered_df["terrain"] != "ice"]))
+    median_yaw_grass = np.median(np.abs(filtered_df.slip_body_yaw_ss.loc[filtered_df["terrain"] != "ice"]))
+    print("median_long: ", median_long_ice/median_long_grass * 100)
+    print("median_lat: ", median_lat_ice/median_lat_grass * 100)
+    print("median_yaw: ", median_yaw_ice/median_yaw_grass * 100)
+
+    median_yaw_overall = np.median(np.abs(filtered_df.slip_body_yaw_ss))
+    print("median yaw overall: ", median_yaw_overall)
+    median_long_overall = np.median(np.abs(filtered_df.slip_body_x_ss))
+    print("median long overall: ", median_long_overall)
+    median_lat_overall = np.median(np.abs(filtered_df.slip_body_y_ss))
+    print("median lat overall: ", median_lat_overall)
     plt.show()
-
-
-
-    print(0.40732918650830996)
-    print(0.75 / 0.40732918650830996)

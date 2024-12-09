@@ -386,9 +386,14 @@ if __name__ =="__main__":
     df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     df = pd.concat([df_warthog,df_husky],axis=0)
+    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_vel"]) <= 4.0)]
 
     #df_test = pd.read_pickle("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl")
-
+    median_easy = np.median(np.abs(filtered_df.total_energy_metric.loc[filtered_df["terrain"] == ("asphalt" or "gravel" or "grass")]))
+    median_ice = np.median(np.abs(filtered_df.total_energy_metric.loc[filtered_df["terrain"] == "ice"]))
+    median_overall = np.median(np.abs(filtered_df.total_energy_metric))
+    print("easy: ", median_ice/median_easy)
+    print("overall: ", median_ice/median_overall)
     
     #boxplot(df)
     boxplot_all_terrain_warthog_robot(df)
@@ -399,6 +404,3 @@ if __name__ =="__main__":
     plt.show()
 
     # print_color_list()
-
-    # print(0.40732918650830996)
-    # print(0.75 / 0.40732918650830996)

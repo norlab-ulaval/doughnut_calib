@@ -10,6 +10,7 @@ import os
 project_root = os.path.abspath("/home/william/workspaces/drive_ws/src/DRIVE/")
 if project_root not in sys.path:
     sys.path.append(project_root)
+from extractors import *
 
 def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.4,path_to_save="figure/fig_robot_comparison_metric_boxplot.pdf"):
 
@@ -159,14 +160,25 @@ if __name__ =="__main__":
     df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     df = pd.concat([df_warthog,df_husky],axis=0)
+    print_column_unique_column(df)
+    filtered_df = df.loc[(np.abs(df["cmd_body_yaw_vel"]) <= 4.0)]
+    df_warthog = filtered_df.loc[filtered_df.robot == "warthog"]
+    df_husky = filtered_df.loc[filtered_df.robot == "husky"]
 
 
     #boxplot(df)
-    boxplot_all_terrain_all_robot(df)
+    boxplot_all_terrain_all_robot(filtered_df)
     #boxplot_few_robot_few_terrain(df)
     #print(df.columns)
     #plot_scatter_metric(df)
     #plot_histogramme_metric(df)
+    median_w_a = np.median(np.abs(df_warthog.total_energy_metric.loc[df_warthog["terrain"] == "asphalt"]))
+    median_w_g = np.median(np.abs(df_warthog.total_energy_metric.loc[df_warthog["terrain"] == "grass"]))
+    median_h_a = np.median(np.abs(df_husky.total_energy_metric.loc[df_husky["terrain"] == "asphalt"]))
+    median_h_g = np.median(np.abs(df_husky.total_energy_metric.loc[df_husky["terrain"] == "grass"]))
+    print("warthog increment: ", median_w_a - median_w_g)
+    print("husky increment: ", median_h_a - median_h_g)
+
     plt.show()
 
 

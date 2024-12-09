@@ -14,6 +14,39 @@ import numpy as np
 import yaml
 
 
+ratio = 0.1
+
+def extract_minimum_sphere(ax,x,y,color, use_ratio=False):
+    x_filtered = np.empty(0)
+    y_filtered = np.empty(0)
+    if use_ratio:
+        for i in range(y.shape[0]):
+            if y[i] > 1.9 or (y[i] < -1.71 and x[i] < -0.9) or (y[i] < -1.78 and x[i] > 0.86):
+                pass
+            else:
+                x_filtered = np.append(x_filtered, x[i])
+                y_filtered = np.append(y_filtered, y[i])
+    else:
+        x_filtered = x
+        y_filtered = y
+    points = np.concat((x_filtered.reshape(x_filtered.shape[0], 1), y_filtered.reshape(x_filtered.shape[0], 1)), axis=1)
+    ax.scatter(x_filtered,y_filtered, edgecolor="none", color=color, alpha=0.2)
+    points_shapely = MultiPoint(points)
+    if use_ratio:
+        polygon = concave_hull(points_shapely,ratio=ratio)
+    else:
+        polygon = concave_hull(points_shapely,ratio=1.0)
+
+    # print(polygon)
+    area = polygon.area
+    x_filtered,y_filtered = polygon.exterior.xy
+    ax.fill(x_filtered, y_filtered, color=color, alpha=0.2,label="convex hull")  # Fill color with transparency
+    
+    #hull = ConvexHull(points)
+    #area = hull.area
+    #ax.fill(points[hull.vertices, 0], points[hull.vertices, 1], color=color, alpha=0.1,label="convex hull")  # Fill color with transparency
+
+    return ax, area,polygon
 
 def extract_distance_travelled(df):
     distance = 0.0
@@ -33,12 +66,11 @@ def extract_distance_travelled(df):
     print("Distance travelled in calib mode:", distance)
 
 def compute_area(df):
-    x = df["icp_pos_x"].to_numpy()
-    y = df["icp_pos_y"].to_numpy()
-    points = np.concat((x.reshape(x.shape[0], 1), y.reshape(y.shape[0], 1)), axis=1)
-    points_shapely = MultiPoint(points)
-    polygon = concave_hull(points_shapely)
-    area = polygon.area
+    x = df["icp_pos_x"].to_numpy().astype("float")
+    y = df["icp_pos_y"].to_numpy().astype("float")
+    print(x)
+    fig,ax = plt.subplots(1, 1)
+    ax, area, poly = extract_minimum_sphere(ax=ax, x=x, y=y, color="blue")
     print("Area covered by the driving zone is ", area, "m^2")
 
 if __name__ == "__main__":
@@ -86,3 +118,6 @@ if __name__ == "__main__":
                                 # print_column_unique_column(df_raw)
                                 extract_distance_travelled(df_raw)
                                 compute_area(df_raw)
+                                plt.show()
+
+                                
