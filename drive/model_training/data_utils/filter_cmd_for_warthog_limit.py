@@ -103,26 +103,64 @@ def reverse_engineer_clearpath_max_speed(df,robot_param,debug=False):
     
     min_ang_speed_limmit = np.max(df.max_ang_speed_sampled)#robot_param["maximum_angular_speed"] # The low-level_limit is constant # min(list(df['max_ang_speed_sampled'].unique())) ### Assume that the df was already prefiltered for the max lin speed
     min_lin_speed_limmit = np.max(df.max_linear_speed_sampled)#robot_param["maximum_linear_speed"]  #The low-level_limit is constant min(list(df['max_linear_speed_sampled'].unique()))
-    b = robot_param["basewidth"]
-    r = robot_param["wheel_radius"] 
-    jacobians = np.array([[1/2,1/2],[-1/b, 1/b]]) * r
-    inv_jac = np.linalg.inv(jacobians)
+    #b = robot_param["basewidth"]
+    #r = robot_param["wheel_radius"] 
+    #jacobians = np.array([[1/2,1/2],[-1/b, 1/b]]) * r
+    #inv_jac = np.linalg.inv(jacobians)
 
     
     #if np.max(np.abs(df["cmd_body_x_lwmean"])) <= min_lin_speed_limmit:
 
     #    min_lin_speed_limmit = np.max(np.abs(df["cmd_body_x_lwmean"]))
     # Define the coordinates of the polygon
+    #max_body_slip  = np.array([(-min_lin_speed_limmit,-min_ang_speed_limmit,), 
+    #                  ( min_lin_speed_limmit,-min_ang_speed_limmit,), 
+    #                  ( min_lin_speed_limmit,min_ang_speed_limmit,), 
+    #                  (-min_lin_speed_limmit, min_ang_speed_limmit),
+    #                  (-min_lin_speed_limmit, -min_ang_speed_limmit)]) # A square
+    
+    #max_body_in_wheel_constraints = (inv_jac @ max_body_slip.T)
+
+    # Create the polygon
+    #rectangle = Polygon(zip(max_body_in_wheel_constraints[1,:],max_body_in_wheel_constraints[0,:]))
+
+    #min_ang_speed_limmit = dict_terrain["min_ang_speed_limmit"] #5.0 # The low-level_limit is constant # min(list(df['max_ang_speed_sampled'].unique())) ### Assume that the df was already prefiltered for the max lin speed
+    #min_lin_speed_limmit =  dict_terrain["min_lin_speed_limmit"] #5.0  #The low-level_limit is constant min(list(df['max_linear_speed_sampled'].unique()))
+    
+    # Define the coordinates of the polygon
     max_body_slip  = np.array([(-min_lin_speed_limmit,-min_ang_speed_limmit,), 
                       ( min_lin_speed_limmit,-min_ang_speed_limmit,), 
                       ( min_lin_speed_limmit,min_ang_speed_limmit,), 
                       (-min_lin_speed_limmit, min_ang_speed_limmit),
-                      (-min_lin_speed_limmit, -min_ang_speed_limmit)]) # A square
+                      (-min_lin_speed_limmit, -min_ang_speed_limmit)]).T # A square
     
-    max_body_in_wheel_constraints = (inv_jac @ max_body_slip.T)
+    b = robot_param["basewidth"]
+    r = robot_param["wheel_radius"] 
+    jacobians = np.array([[1/2,1/2],[-1/b, 1/b]]) * r
 
+    max_body_in_wheel_constraints = (np.linalg.inv(jacobians) @ max_body_slip)
+    
+
+    
+    ### Assuming that wheel reaches their Steady state velocity after 2 s
+    left_wheel = column_type_extractor(df, "cmd_left")
+    right_wheel = column_type_extractor(df, "cmd_right")
+    
+    max_wheel_speed_cmd = robot_param["maximum_wheel_speed_empty"]#max([np.max(np.abs(left_wheel)),np.max(np.abs(right_wheel))])
+    
+    max_wheel_coordinates = np.array([(-max_wheel_speed_cmd,-max_wheel_speed_cmd), (-max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, -max_wheel_speed_cmd)]).T  #    
+
+    ##### 
+    
+    
     # Create the polygon
+    
     rectangle = Polygon(zip(max_body_in_wheel_constraints[1,:],max_body_in_wheel_constraints[0,:]))
+
+    rectangle_2 = Polygon(zip(max_wheel_coordinates[1,:],max_wheel_coordinates[0,:]))
+    
+    union_res = rectangle.intersection(rectangle_2)
+
 
     
     cmd_body_lin =  np.mean(column_type_extractor(df,"cmd_left_wheels"),axis=1)
@@ -135,7 +173,7 @@ def reverse_engineer_clearpath_max_speed(df,robot_param,debug=False):
 
         pt = Point(cmd[i,:])
 
-        if shapely.within(pt, rectangle) or shapely.touches(pt,rectangle):
+        if shapely.within(pt, union_res) or shapely.touches(pt,union_res):
             filter.append(True)
         else:
             filter.append(False)
@@ -146,8 +184,8 @@ def reverse_engineer_clearpath_max_speed(df,robot_param,debug=False):
     new_df = df.loc[filter]    
 
     if debug:
-        scatter_diamond_displacement_graph(df,[rectangle],subtitle="")
-        scatter_diamond_displacement_graph(new_df,[rectangle],subtitle="")
+        scatter_diamond_displacement_graph(df,[union_res],subtitle="")
+        scatter_diamond_displacement_graph(new_df,[union_res],subtitle="")
         plt.show()
 
     return new_df,min_ang_speed_limmit,min_lin_speed_limmit
@@ -183,7 +221,7 @@ def generate_body_frame_domain_polygon(df,dict_terrain,robot_param,debug=False):
     left_wheel = column_type_extractor(df, "cmd_left")
     right_wheel = column_type_extractor(df, "cmd_right")
     
-    max_wheel_speed_cmd = max([np.max(np.abs(left_wheel)),np.max(np.abs(right_wheel))])
+    max_wheel_speed_cmd = robot_param["maximum_wheel_speed_empty"]#max([np.max(np.abs(left_wheel)),np.max(np.abs(right_wheel))])
     
     max_wheel_coordinates = np.array([(-max_wheel_speed_cmd,-max_wheel_speed_cmd), (-max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, -max_wheel_speed_cmd)]).T  #    
 
@@ -247,7 +285,7 @@ def generate_wheel_frame_domain_polygon(df,dict_terrain,robot_param,debug=False)
     left_wheel = column_type_extractor(df, "cmd_left")
     right_wheel = column_type_extractor(df, "cmd_right")
     
-    max_wheel_speed_cmd = max([np.max(np.abs(left_wheel)),np.max(np.abs(right_wheel))])
+    max_wheel_speed_cmd = robot_param["maximum_wheel_speed_empty"] #max([np.max(np.abs(left_wheel)),np.max(np.abs(right_wheel))])
     
     max_wheel_coordinates = np.array([(-max_wheel_speed_cmd,-max_wheel_speed_cmd), (-max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, max_wheel_speed_cmd), (max_wheel_speed_cmd, -max_wheel_speed_cmd)]).T  #    
 
@@ -371,7 +409,7 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df,robot,dict_terrain):
 if __name__=="__main__":
     
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    df_filtered = filter_all_results_clearpath(path,"warthog",debug=False)
+    df_filtered = filter_all_results_clearpath(path,"warthog",debug=True)
 
     df_test = pd.read_pickle(path)
     
@@ -380,7 +418,6 @@ if __name__=="__main__":
 
     df_filtered_sand = df_filtered.loc[df_filtered.terrain=="sand"]
     print(df_filtered_sand)
-
     
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
     filter_all_results_clearpath(path,"husky",debug=False)
@@ -395,3 +432,4 @@ if __name__=="__main__":
 
     
 
+    print()

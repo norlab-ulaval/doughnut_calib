@@ -47,17 +47,18 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     plt.rc('font', **font)
     plt.rc('font', family='serif', serif='Times')
     plt.rc('text', usetex=True)
-    plt.rc('xtick', labelsize=9)
-    plt.rc('ytick', labelsize=9)
-    plt.rc('axes', labelsize=10)
+    plt.rc('xtick', labelsize=8)
+    plt.rc('ytick', labelsize=8)
+    plt.rc('axes', labelsize=8)
     mpl.rcParams['lines.dashed_pattern'] = [2, 2]
     mpl.rcParams['lines.linewidth'] = 1.0
 
     fig, axs = plt.subplots(3,1)
-    fig.set_figwidth = 88/25.4
-    fig.set_figheight = 4.58
     
-    fig.subplots_adjust(hspace=0.2 ,wspace=0.4)
+    fig.set_figwidth(88/25.4) 
+    fig.set_figheight(4.0)
+    fig.subplots_adjust(left=.13, bottom=.08, right=.99, top=.97,hspace=0.1)
+    #fig.subplots_adjust(hspace=0.2 ,wspace=0.4)
     
     list_array_x = []
     list_array_y = []
@@ -99,12 +100,16 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     list_array_y, list_color_y,list_terrain_reordered_y = reorder_boxplot(list_array_y, list_color,list_terrain)
     list_array_rot, list_color_rot,list_terrain_reordered_rot = reorder_boxplot(list_array_rot, list_color,list_terrain)
     
-    for _list in [list_array_rot, list_color_rot, list_terrain_reordered_rot]:
-        tmp = _list[-2]
-        _list[-2] = _list[-1]
-        _list[-1] = tmp
-    # 
-    # Add the overall 
+    for _list in [list_array_x, list_color_x, list_terrain_reordered_x]:
+        tmp = _list[1]
+        _list[1] = _list[2]
+        _list[2] = tmp
+    
+    for _list in [list_array_y, list_color_y, list_terrain_reordered_y]:
+        tmp = _list[0]
+        _list[0] = _list[1]
+        _list[1] = tmp
+    #Add the overall 
     list_array_x.append([item for sublist in list_array_x for item in sublist])
     list_array_y.append([item for sublist in list_array_y for item in sublist])
     list_array_rot.append([item for sublist in list_array_rot for item in sublist])
@@ -138,7 +143,6 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
             pos_labels += delta_x + (delta_same_terrain/2) 
             list_pos_labels.append(pos_labels)
             pos_labels += (delta_same_terrain/2)
-            #pos_labels += (value/2 * delta_same_terrain) 
         else:
             position += delta_x
             pos_labels += delta_x
@@ -151,7 +155,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     box1 = axs[0].boxplot(list_array_x,whis=(2.5, 97.5),showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
     box2 = axs[1].boxplot(list_array_y,whis=(2.5, 97.5),showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
     box3 = axs[2].boxplot(list_array_rot,whis=(2.5, 97.5),showfliers=False,patch_artist=True, positions=list_position,widths=box_width)
-    iterator = 0
+
     for box, color_list in zip([box1,box2,box3], [list_color_x, list_color_y, list_color_rot]):
         
         for patch, color in zip(box['boxes'], color_list):
@@ -161,35 +165,17 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
         # Change the median line color to black
         for median in box['medians']:
             median.set_color('black')
-    #list_terrain_x_ticks = [terrain[0].capitalize() + terrain[1:] for terrain in list_terrain]
-    #axs[0].set_xticks(list_pos_labels,labels=[])
-    #axs[1].set_xticks(list_pos_labels,labels=[])
-    #axs[2].set_xticks(list_pos_labels,labels=list_terrain_x_ticks)
 
     for ax in np.ravel(axs):
         ax.set_xticks([])       # Remove the ticks
         ax.set_xticklabels([])  # Remove the labels
         
-    axs[0].set_ylabel("Longitudinal slip [m/s]")
-    axs[1].set_ylabel("Lateral slip [m/s]")
-    axs[2].set_ylabel("Angular slip [rad/s]")
-    tick_labels = ['Asphalt', 'Grass', 'Gravel', 'Sand', 'Ice', 'Overall']
+    axs[0].set_ylabel("Longitudinal slip (m/s)")
+    axs[1].set_ylabel("Lateral slip (m/s)")
+    axs[2].set_ylabel("Angular slip (rad/s)")
+    tick_labels = ['Gravel', 'Asphalt', 'Grass', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs[2].set_xticks(ticks, tick_labels)
-
-    # Extract legends from both axes
-    #legend1 = axs[0].get_legend_handles_labels()
-    # Combine legends from both axes
-    #handles = legend1[0] 
-    #labels = legend1[1]
-
-    #print(labels)
-    #final_handles = [handles[4],handles[5]]
-    #final_labels = [labels[4][0].capitalize() + labels[4][1:],labels[5][0].capitalize() + labels[5][1:]]
-    
-    #axs[0].legend(handles=final_handles,labels=final_labels)
-    #axs[1].set_ylabel("translationnal_energy_metric")
-    #axs[2].set_ylabel("total_energy_metric")
 
     for ax in np.ravel(axs):
         ax.set_xlim(delta_x/2,list_pos_hfill[-1])
@@ -197,35 +183,11 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     axs[0].set_ylim(-0.1, 2.1)
     axs[1].set_ylim(-0.1, 2.1)
     axs[2].set_ylim(-0.1, 6)
-
-    ## Add the color fill 
-    j = 1 
-    print(list_position)
-    print(list_pos_hfill)
-
-    print(list_terrain)
-    # for color_x,color_y,color_rot,label  in zip(list_color_x,list_color_y,list_color_rot,list_terrain_reordered_rot):
-        
-    #     axs[0].fill_between(list_pos_hfill[j-1:j+1],y1=-6, y2=6,color="lightgrey",alpha=alpha_param)
-    #     axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=-6 , y2=6,color="lightgrey",alpha=alpha_param)
-    #     axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=-6, y2=6,color="lightgrey",alpha=alpha_param,label=label[0].upper()+label[1:])
-        
-    #     j+=2
     
     # Add the vertical thick line 
     axs[0].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
     axs[1].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
     axs[2].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")
-    #axs[1].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_transl,alpha=alpha_param)
-    #axs[2].fill_between(list_pos_hfill[j-1:j+1],y1=1,color=color_total,alpha=alpha_param,label=label[0].upper()+label[1:])
-    #    
-    # handles, labels = axs[2].get_legend_handles_labels()
-    # print(handles)
-    # print(labels)
-    # overall = mpatches.Patch(edgecolor='black',facecolor="white")
-    # handles[-1] = overall
-    # fig.legend(handles,labels,bbox_to_anchor= (0.78,0.125),ncols=3)
-    #fig.tight_layout()
 
     fig.savefig(path_to_save,dpi=300)
     fig.savefig(path_to_save[:-4]+".png",dpi=300)
@@ -234,21 +196,33 @@ if __name__ =="__main__":
     
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
     df_warthog = pd.read_pickle(path_to_raw_result)
+    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_lwmean"]) <= 4.0)]
     # path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
     # df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     # df = pd.concat([df_warthog,df_husky],axis=0)
 
-    print_column_unique_column(df_warthog)
+    # print_column_unique_column(df_warthog)
     #boxplot(df)
     boxplot_all_terrain_warthog_robot(df_warthog)
     #boxplot_few_robot_few_terrain(df)
     #print(df.columns)
     #plot_scatter_metric(df)
     #plot_histogramme_metric(df)
+    median_long_ice = np.median(np.abs(filtered_df.slip_body_x_ss.loc[filtered_df["terrain"] == "ice"]))
+    median_lat_ice = np.median(np.abs(filtered_df.slip_body_y_ss.loc[filtered_df["terrain"] == "ice"]))
+    median_yaw_ice = np.median(np.abs(filtered_df.slip_body_yaw_ss.loc[filtered_df["terrain"] == "ice"]))
+    median_long_grass = np.median(np.abs(filtered_df.slip_body_x_ss.loc[filtered_df["terrain"] != "ice"]))
+    median_lat_grass = np.median(np.abs(filtered_df.slip_body_y_ss.loc[filtered_df["terrain"] != "ice"]))
+    median_yaw_grass = np.median(np.abs(filtered_df.slip_body_yaw_ss.loc[filtered_df["terrain"] != "ice"]))
+    print("median_long: ", median_long_ice/median_long_grass * 100)
+    print("median_lat: ", median_lat_ice/median_lat_grass * 100)
+    print("median_yaw: ", median_yaw_ice/median_yaw_grass * 100)
+
+    median_yaw_overall = np.median(np.abs(filtered_df.slip_body_yaw_ss))
+    print("median yaw overall: ", median_yaw_overall)
+    median_long_overall = np.median(np.abs(filtered_df.slip_body_x_ss))
+    print("median long overall: ", median_long_overall)
+    median_lat_overall = np.median(np.abs(filtered_df.slip_body_y_ss))
+    print("median lat overall: ", median_lat_overall)
     plt.show()
-
-
-
-    print(0.40732918650830996)
-    print(0.75 / 0.40732918650830996)

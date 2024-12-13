@@ -1077,6 +1077,53 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         df_combine = pd.concat(list_df,axis=0)
 
         df_combine.to_csv("drive_datasets/results_multiple_terrain_dataframe/metric/{self.robot_name}_steps_convergence.csv")
+
+
+def recompute_results_for_watermelon_metric(df,robot,windo_to_use = "first_window"):
+
+    column_to_keep = ["cmd_body_lin_vel", "cmd_body_yaw_vel","cmd_metric_total_energy_metric",
+                      "cmd_total_energy_metric","cmd_rotationnal_energy_metric","cmd_translationnal_energy_metric"]
+    column_to_keep_texte = ["terrain"]
+    dico_translate = {"cmd_body_lin_vel":"cmd_body_x_mean",
+                      "cmd_body_yaw_vel":"cmd_body_yaw_mean",
+                      "cmd_metric_total_energy_metric":f"{windo_to_use}_metric",
+                      "cmd_total_energy_metric":f"{windo_to_use}_cmd_total_energy_metric",
+                      "cmd_rotationnal_energy_metric":f"{windo_to_use}_cmd_rotationnal_energy_metric",
+                      "cmd_translationnal_energy_metric":f"{windo_to_use}_cmd_translationnal_energy_metric"}
+    
+    new_dico = {}
+    for col in column_to_keep:
+
+        extracted_col = df[col].to_numpy()
+        length = extracted_col.shape[0]
+        size1 = 119
+        size0 = length//size1
+        reshaped_extracted_col = extracted_col.reshape((size0,size1))
+
+        if windo_to_use == "first_window":
+            lw = np.mean(reshaped_extracted_col[:,:40],axis=1)
+        elif windo_to_use == "last_window":
+            lw = np.mean(reshaped_extracted_col[:,-39:],axis=1)
+        new_dico[dico_translate[col]] = lw
+    
+    for col in column_to_keep_texte:
+
+        extracted_col = df[col].to_numpy()
+        length = extracted_col.shape[0]
+        size1 = 119
+        size0 = length//size1
+        reshaped_extracted_col = extracted_col.reshape((size0,size1))
+
+        lw = reshaped_extracted_col[:,60]
+        new_dico[col] = lw
+    
+
+    df= pd.DataFrame.from_dict(new_dico)
+    return df
+    #df_warthog.to_csv("drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_to_watermelon.csv")
+    #df.to_csv(f"drive_datasets/results_multiple_terrain_dataframe/metric/{robot}_{windo_to_use}_metric_to_watermelon.csv")
+    
+
 if __name__ == "__main__":
 
     
@@ -1145,3 +1192,27 @@ if __name__ == "__main__":
     #graph_metric3.graph_metric_boxplot_by_terrain(percentage=True)
     
     
+    path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_cmd_raw_slope_metric_scatter.csv"
+    df_warthog_metric = pd.read_csv(path_to_raw_result)
+    path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric_scatter.csv"
+    df_husky_metric = pd.read_csv(path_to_raw_result)
+    
+    path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_cmd_raw_slope_metric.csv"
+    df_warthog_vels = pd.read_csv(path_to_raw_result)
+    path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
+    df_husky_vels = pd.read_csv(path_to_raw_result)
+    
+    df_warthog = pd.concat([df_warthog_metric, df_warthog_vels["cmd_body_lin_vel"], df_warthog_vels["cmd_body_yaw_vel"]], axis=1)
+    df_husky = pd.concat([df_husky_metric, df_husky_vels["cmd_body_lin_vel"], df_husky_vels["cmd_body_yaw_vel"]], axis=1)
+
+    fw_warthog = recompute_results_for_watermelon_metric(df_warthog,"warthog",windo_to_use = "first_window")
+    lw_warthog = recompute_results_for_watermelon_metric(df_warthog,"warthog",windo_to_use = "last_window")
+    
+    fw_husky = recompute_results_for_watermelon_metric(df_husky,"husky",windo_to_use = "first_window")
+    lw_husky = recompute_results_for_watermelon_metric(df_husky,"husky",windo_to_use = "last_window")
+    
+    lw_warthog["first_window_metric"] = fw_warthog[f"first_window_metric"]
+    lw_husky["first_window_metric"] = fw_husky[f"first_window_metric"]
+    
+    lw_warthog.to_csv("drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_to_watermelon.csv")
+    lw_husky.to_csv("drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_to_watermelon.csv")

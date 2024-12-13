@@ -314,7 +314,7 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
         fig.set_figwidth(88/25.4)
         fig.set_figheight(3.0)
         list_y_coordinates = ["_total_energy_metric"]
-        labels = ["$95^{th}$ percentile \n kinetic energy [J]"]
+        labels = ["$95^{th}$ percentile \n kinetic energy (J)"]
         # Create subplots with gridspec
         gs = gridspec.GridSpec(2, 1, wspace=0.4,height_ratios=[4,3], figure=fig)
         ax1 = fig.add_subplot(gs[0])
@@ -400,7 +400,7 @@ def plot_metric_scatter_scatter(df_res,alpha_param=0.4,suffix="",y_column="y_coo
         ylimit = ax.get_ylim()
         ax.set_ylim(1,ylimit[1])
         ax.set_xlim(0,1)
-        ax.set_yscale("log")
+        #ax.set_yscale("log")
 
     #axs.reshape(3,1)
 
@@ -620,8 +620,6 @@ def boxplot(df):
     axs[2].set_ylabel("total_energy_metric")
 
 
-
-
 if __name__ =="__main__":
     
     #PATH_TO_RESULT = "drive_datasets/results_multiple_terrain_dataframe/metric/results_slope_metric.csv"
@@ -673,4 +671,4 @@ if __name__ =="__main__":
     #plot_histogramme_metric(df)
     plt.show()
 
-
+    

@@ -1,6 +1,6 @@
 terrain_to_skip:
   - noskip
-  #- wetgrass
+  - wetgrass
   #- gravel
   #- grass
   #- sand
@@ -10,6 +10,6 @@ terrain_to_skip:
   - avide2
 robot_to_skip:
   - noskip
-  - husky
+  #- husky
   #- marmotte
   # - warthog

@@ -30,8 +30,8 @@ def boxplot_all_terrain_all_robot(df,alpha_param=0.2,alpha_bp=0.6,path_to_save="
     mpl.rcParams['lines.linewidth'] = 1.0
 
     fig, axs = plt.subplots(3,1)
-    fig.set_figwidth = 88/25.4
-    fig.set_figheight = 4.5
+    fig.set_figwidth(88/25.4)
+    fig.set_figheight(1.5)
 
 
     
@@ -193,15 +193,16 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     plt.rc('font', **font)
     plt.rc('font', family='serif', serif='Times')
     plt.rc('text', usetex=True)
-    plt.rc('xtick', labelsize=9)
-    plt.rc('ytick', labelsize=9)
-    plt.rc('axes', labelsize=10)
+    plt.rc('xtick', labelsize=8)
+    plt.rc('ytick', labelsize=8)
+    plt.rc('axes', labelsize=8)
     mpl.rcParams['lines.dashed_pattern'] = [2, 2]
     mpl.rcParams['lines.linewidth'] = 1.0
 
     fig, axs = plt.subplots(1,1)
-    fig.set_figwidth = 88/25.4
-    fig.set_figheight = 4.58
+    fig.set_figwidth(88/25.4)
+    fig.set_figheight(88/25.4 / 1.618)
+
     
     # fig.subplots_adjust(hspace=0.2 ,wspace=0.4)
     
@@ -308,13 +309,14 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     #axs[1].set_xticks(list_pos_labels,labels=[])
     #axs[2].set_xticks(list_pos_labels,labels=list_terrain_x_ticks)
 
-    for ax in np.ravel(axs):
-        ax.set_xticks([])       # Remove the ticks
-        ax.set_xticklabels([])  # Remove the labels
+    #for ax in np.ravel(axs):
+    #    ax.set_xticks([])       # Remove the ticks
+    #    ax.set_xticklabels([])  # Remove the labels
         
     # axs[0].set_ylabel("Difficulty metric \n rotationnal energy [J]")
     # axs[1].set_ylabel("Difficulty metric \n translationnal energy [J]")
-    axs.set_ylabel("Difficulty metric \n total energy [SI]")
+    for ax in np.ravel(axs):
+        ax.set_ylabel("Unpredictability metric")
 
     # Extract legends from both axes
     #legend1 = axs[0].get_legend_handles_labels()
@@ -360,14 +362,18 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     # handles[-1] = overall
     # fig.legend(handles,labels,bbox_to_anchor= (0.78,0.125),ncols=3)
     #fig.tight_layout()
-    tick_labels = ['Gravel', 'Grass', 'Asphalt', 'Sand', 'Ice', 'Overall']
+    tick_labels = ['Grass', 'Gravel', 'Asphalt', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs.set_xticks(ticks, tick_labels)
-
+    #fig.tight_layout()
+    #fig.subplots_adjust(left=.15, bottom=.16, right=.99, top=.97)
+    fig.subplots_adjust(left=.13, bottom=.10, right=.99, top=.97,hspace=0.1)
+    
     fig.savefig(path_to_save,dpi=300)
     fig.savefig(path_to_save[:-4]+".png",dpi=300)
+    plt.show()
     
-
+    print(path_to_save)
 def print_color_list():
     color_dict = {"asphalt":"grey", "ice":"blue","gravel":"orange","grass":"green","sand":"orangered","avide":"grey","avide2":"grey","mud":"darkgoldenrod","tile":"lightcoral"}
     for key in color_dict:
@@ -385,9 +391,14 @@ if __name__ =="__main__":
     df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     df = pd.concat([df_warthog,df_husky],axis=0)
+    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_vel"]) <= 4.0)]
 
     #df_test = pd.read_pickle("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl")
-
+    median_easy = np.median(np.abs(filtered_df.total_energy_metric.loc[filtered_df["terrain"] == ("asphalt" or "gravel" or "grass")]))
+    median_ice = np.median(np.abs(filtered_df.total_energy_metric.loc[filtered_df["terrain"] == "ice"]))
+    median_overall = np.median(np.abs(filtered_df.total_energy_metric))
+    print("easy: ", median_ice/median_easy)
+    print("overall: ", median_ice/median_overall)
     
     #boxplot(df)
     boxplot_all_terrain_warthog_robot(df)
@@ -395,9 +406,9 @@ if __name__ =="__main__":
     #print(df.columns)
     #plot_scatter_metric(df)
     #plot_histogramme_metric(df)
-    # plt.show()
+    plt.show()
 
-    print_color_list()
+    #print_color_list()
 
     # print(0.40732918650830996)
     # print(0.75 / 0.40732918650830996)

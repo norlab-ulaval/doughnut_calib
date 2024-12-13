@@ -23,7 +23,7 @@ metric:
     robot_rel_path: "drive/model_training/data_utils/robot_param.yaml"
     computation: "mean-steady-state"
     joule_treshold: 0.001
-    steady_state_only: False 
+    steady_state_only: True 
     mean_the_steady_state: False
     path_to_save: "drive_datasets/results_multiple_terrain_dataframe/metric/results_slope_metric.csv"
 motion_model:

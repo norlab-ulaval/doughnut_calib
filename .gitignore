@@ -211,3 +211,7 @@ AMENT_IGNORE
 .python-version
 
 drive_datasets/results_multiple_terrain_dataframe/
+
+*.png
+
+*.zip
