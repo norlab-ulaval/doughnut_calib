@@ -101,22 +101,21 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     list_array_y, list_color_y,list_terrain_reordered_y = reorder_boxplot(list_array_y, list_color,list_terrain)
     list_array_rot, list_color_rot,list_terrain_reordered_rot = reorder_boxplot(list_array_rot, list_color,list_terrain)
     
-    for _list in [list_array_x, list_color_x, list_terrain_reordered_x]:
-        tmp = _list[0]
-        _list[0] = _list[2]
-        _list[2] = tmp
+    # for _list in [list_array_x, list_color_x, list_terrain_reordered_x]:
+    #     tmp = _list[0]
+    #     _list[0] = _list[2]
+    #     _list[2] = tmp
     
-    #for _list in [list_array_y, list_color_y, list_terrain_reordered_y]:
-    #    tmp = _list[0]
-    #    _list[0] = _list[1]
-    #    _list[1] = tmp
+    for _list in [list_array_y, list_color_y, list_terrain_reordered_y]:
+       tmp = _list[0]
+       _list[0] = _list[2]
+       _list[2] = tmp
     
     for _list in [list_array_rot, list_color_rot, list_terrain_reordered_rot]:
         tmp = _list[0]
-        tmp2 = _list[1]
-        _list[0] = _list[2]
+        _list[0] = _list[1]
         _list[1] = tmp
-        _list[2] = tmp2
+
 
     #Add the overall 
     list_array_x.append([item for sublist in list_array_x for item in sublist])
@@ -182,7 +181,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     axs[0].set_ylabel("Longitudinal slip (m/s)")
     axs[1].set_ylabel("Lateral slip (m/s)")
     axs[2].set_ylabel("Angular slip (rad/s)")
-    tick_labels = ['Asphalt', 'Grass', 'Gravel', 'Sand', 'Ice', 'Overall']
+    tick_labels = ['Gravel', 'Grass', 'Asphalt', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs[2].set_xticks(ticks, tick_labels)
 
