@@ -367,7 +367,7 @@ if __name__=="__main__":
     result_folder= update_config["result_folder"]
     drive_inventory_names = update_config["drive_inventory_names"]
     
-    produce_video = True
+    produce_video = False
     dico_2_do = update_yaml_file(result_folder=result_folder, drive_workspace=drive_workspace, drive_inventory_names = drive_inventory_names, produce_video = produce_video)
     dico_2_do.pop("last_update_time")
     list_dataframe = list(dico_2_do.values()) 

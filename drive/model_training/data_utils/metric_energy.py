@@ -734,7 +734,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         compensation_to_use = self.translationnal_compensation_array
         if self.steady_state_only:
             x = x[:,-n_steady_state:]
-            y = y[:,-n_steady_state:]
+            y = y[:,-(n_steady_state):]
 
             
         if self.mean_the_steady_state:
@@ -747,6 +747,7 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         #x_masked = x[mask]
         #y_masked = y[mask]
         if compensation_on:
+            y = y
             y_masked = y
 
         else:
@@ -767,6 +768,8 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         metric_mean = np.median(metric_raw) # 
         std_metric = np.std(metric_raw)
         x_95 = np.percentile(x_masked,95)
+
+        
         return m_slope,mean_slope,std_slope,metric_mean,std_metric, metric_raw,x_95,y_masked,x_masked
 
     def filter_contamination(self,df_energy_cmd,terrain,treshold):
@@ -817,9 +820,13 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
                                                                                                 n_steady_state = n_steady_state,
                                                                                                 compensation_on=True)
                 
+                    if self.steady_state_only:
+                        y_maksed = gt_energy[:,-(n_steady_state-1):]
+                    else:
+                        y_maksed = gt_energy[:,1:]
                     # makes sure tha the total energy saved is the real energy metric and not the affected one.
                     
-                    y_maksed = gt_energy[:,1:]
+                    
                 else:
                     m_slope,mean_slope,std_slope,metric,std_metric, metric_raw,x_95,y_maksed,x_masked = self.compute_average_slope(idd_energy,gt_energy ,
                                                                                             joules_treshold=self.joule_treshold,
@@ -894,6 +901,8 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         sign_to_classify = np.where(sign_to_classify <=0, np.zeros_like(sign_to_classify), sign_to_classify)
         sign_to_classify = np.where(np.isnan(sign_to_classify)==True, np.zeros_like(sign_to_classify),sign_to_classify)
         self.rotationnal_compensation_array = sign_to_classify
+        
+        
         self.translationnal_compensation_array = translationnal_compensation_array
 
     

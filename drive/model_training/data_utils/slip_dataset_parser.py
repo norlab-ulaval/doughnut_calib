@@ -958,7 +958,7 @@ if __name__ =="__main__":
 
     path_2_exp = pathlib.Path("drive_datasets/data/warthog/wheels/ice/warthog_wheels_ice/model_training_results/offline")
 
-    data_parser = SlipDatasetParser(df,path_2_exp,0.3,1.08,-16.6666,16.666666,20)
+    data_parser = SlipDatasetParser(df,path_2_exp,0.3,1.08,-13.6666,13.666666,20)
 
     data = data_parser.append_slip_elements_to_dataset(compute_by_whole_step=True,debug=False,smooth=True)
 

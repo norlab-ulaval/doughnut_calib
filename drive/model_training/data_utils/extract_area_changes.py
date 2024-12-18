@@ -94,7 +94,8 @@ def plot_cmd_on_losange(path_to_cmd_vel,df,label,color_ref="grey"):
 
 if __name__ == "__main__":
 
-    steady_state_path = "drive_datasets/data/will/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
+    steady_state_path = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
+
     df_diamond = pd.read_pickle(steady_state_path)
     color_dict = {"asphalt":"grey", "ice":"blue","gravel":"brown","grass":"green","tile":"pink","boreal":"lightgray"}
     terrain_list_warthog = ["asphalt", "grass", "gravel", "sand", "ice"]
@@ -105,7 +106,7 @@ if __name__ == "__main__":
         df_terrain = df_warthog.loc[df_warthog["terrain"]==i]
         # print_column_unique_column(df_warthog)
 
-        path_to_cmd_vel_csv = "drive_datasets/data/will/combined_output.csv"
+        path_to_cmd_vel_csv = "drive_datasets/results_multiple_terrain_dataframe/area_test/combined_output.csv"
 
         label = ["CMD space sampled by drive", "steady_state speed on gravel", "CMD in snow"]
         plot_cmd_on_losange(path_to_cmd_vel_csv,df_terrain,label,color_ref="grey")

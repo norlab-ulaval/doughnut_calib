@@ -82,4 +82,7 @@ def iter_scatter(df):
         fig.savefig(PATH_TO_SAVE+f"/{i}_{terrain[i]}.png")
         plt.close("all")
         
-iter_scatter(df)
+#iter_scatter(df)
+
+
+

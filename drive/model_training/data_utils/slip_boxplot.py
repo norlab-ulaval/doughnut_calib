@@ -7,6 +7,7 @@ import matplotlib as mpl
 import matplotlib.patches as mpatches
 import sys
 import os
+from metric_energy_boxplot import keep_only_steady_state_and_filter
 project_root = os.path.abspath("/home/william/workspaces/drive_ws/src/DRIVE/")
 if project_root not in sys.path:
     sys.path.append(project_root)
@@ -101,14 +102,22 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     list_array_rot, list_color_rot,list_terrain_reordered_rot = reorder_boxplot(list_array_rot, list_color,list_terrain)
     
     for _list in [list_array_x, list_color_x, list_terrain_reordered_x]:
-        tmp = _list[1]
-        _list[1] = _list[2]
+        tmp = _list[0]
+        _list[0] = _list[2]
         _list[2] = tmp
     
-    for _list in [list_array_y, list_color_y, list_terrain_reordered_y]:
+    #for _list in [list_array_y, list_color_y, list_terrain_reordered_y]:
+    #    tmp = _list[0]
+    #    _list[0] = _list[1]
+    #    _list[1] = tmp
+    
+    for _list in [list_array_rot, list_color_rot, list_terrain_reordered_rot]:
         tmp = _list[0]
-        _list[0] = _list[1]
+        tmp2 = _list[1]
+        _list[0] = _list[2]
         _list[1] = tmp
+        _list[2] = tmp2
+
     #Add the overall 
     list_array_x.append([item for sublist in list_array_x for item in sublist])
     list_array_y.append([item for sublist in list_array_y for item in sublist])
@@ -173,7 +182,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.3,robot="warthog",
     axs[0].set_ylabel("Longitudinal slip (m/s)")
     axs[1].set_ylabel("Lateral slip (m/s)")
     axs[2].set_ylabel("Angular slip (rad/s)")
-    tick_labels = ['Gravel', 'Asphalt', 'Grass', 'Sand', 'Ice', 'Overall']
+    tick_labels = ['Asphalt', 'Grass', 'Gravel', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs[2].set_xticks(ticks, tick_labels)
 
@@ -196,15 +205,22 @@ if __name__ =="__main__":
     
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
     df_warthog = pd.read_pickle(path_to_raw_result)
-    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_lwmean"]) <= 4.0)]
+
+    #filtered_df = keep_only_steady_state_and_filter(df_warthog,119,39,yaw_filter =4.0,
+    #                                keep_only_steady_state = True,
+    #                                filter_data = True,
+    #                                col_to_filter_with = "cmd_body_yaw_lwmean")
+    
+    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_lwmean"]) <=4.0)]
     # path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
     # df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     # df = pd.concat([df_warthog,df_husky],axis=0)
-
+    #plt.hist(filtered_df.cmd_body_x_lwmean)
+    #plt.show()
     # print_column_unique_column(df_warthog)
     #boxplot(df)
-    boxplot_all_terrain_warthog_robot(df_warthog)
+    boxplot_all_terrain_warthog_robot(filtered_df)
     #boxplot_few_robot_few_terrain(df)
     #print(df.columns)
     #plot_scatter_metric(df)

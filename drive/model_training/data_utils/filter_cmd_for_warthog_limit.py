@@ -95,7 +95,7 @@ def scatter_diamond_displacement_graph(df_all_terrain,list_shape,subtitle=""):
         return fig 
 
 
-def reverse_engineer_clearpath_max_speed(df,robot_param,debug=False):
+def reverse_engineer_clearpath_max_speed(df,robot_param,filter_data=True,debug=False):
     
 
     
@@ -172,12 +172,14 @@ def reverse_engineer_clearpath_max_speed(df,robot_param,debug=False):
     for i in range(cmd.shape[0]):
 
         pt = Point(cmd[i,:])
-
-        if shapely.within(pt, union_res) or shapely.touches(pt,union_res):
-            filter.append(True)
+        if filter_data:
+            if shapely.within(pt, union_res) or shapely.touches(pt,union_res):
+                filter.append(True)
+            else:
+                filter.append(False)
         else:
-            filter.append(False)
-    
+            filter.append(True)
+
     
     df["is_within_software_limits"] = filter
     
@@ -313,7 +315,7 @@ def generate_wheel_frame_domain_polygon(df,dict_terrain,robot_param,debug=False)
 
 
 
-def filter_all_results_clearpath(path_to_df,robot,debug=False):
+def filter_all_results_clearpath(path_to_df,robot,filter_data=False,debug=False):
 
 
     with open(PATH_ROBOT_CONFIG_FILE) as file:
@@ -345,7 +347,7 @@ def filter_all_results_clearpath(path_to_df,robot,debug=False):
 
     for terrain in list_terrain: 
         
-        new_df,min_ang_speed_limmit,min_lin_speed_limmit = reverse_engineer_clearpath_max_speed(df.loc[df.terrain== terrain],robot_param,debug=debug)
+        new_df,min_ang_speed_limmit,min_lin_speed_limmit = reverse_engineer_clearpath_max_speed(df.loc[df.terrain== terrain],robot_param,filter_data=filter_data,debug=debug)
         
         dico_temp = {"min_ang_speed_limmit":min_ang_speed_limmit,
                     "min_lin_speed_limmit":min_lin_speed_limmit,
@@ -401,15 +403,11 @@ def extract_wheel_and_clearpath_limit_by_terrain(path_to_df,robot,dict_terrain):
     print("\n"*3,path_to_save,"\n"*3)
 
 
-    
-
-
-
-    
 if __name__=="__main__":
     
+    filter_data = True
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_steady_state_dataset.pkl"
-    df_filtered = filter_all_results_clearpath(path,"warthog",debug=True)
+    df_filtered = filter_all_results_clearpath(path,"warthog",debug=True,filter_data=filter_data)
 
     df_test = pd.read_pickle(path)
     
@@ -427,9 +425,3 @@ if __name__=="__main__":
     
     path = "drive_datasets/results_multiple_terrain_dataframe/all_terrain_slip_dataset.pkl"
     filter_all_results_clearpath(path,"husky",debug=False)
-
-    
-
-    
-
-    print()

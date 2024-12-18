@@ -246,6 +246,11 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     # list_array_rot, list_color_rot,list_terrain_reordered_rot = reorder_boxplot(list_array_rot, list_color,list_terrain)
     # list_array_transl, list_color_transl,list_terrain_reordered_transl = reorder_boxplot(list_array_transl, list_color,list_terrain)
 
+    for _list in [list_array_total, list_color_total, list_terrain_reordered_total]:
+        tmp = _list[0]
+        _list[0] = _list[1]
+        _list[1] = tmp
+    
     # 
     # Add the overall 
     list_array_total.append([item for sublist in list_array_total for item in sublist])
@@ -362,7 +367,7 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     # handles[-1] = overall
     # fig.legend(handles,labels,bbox_to_anchor= (0.78,0.125),ncols=3)
     #fig.tight_layout()
-    tick_labels = ['Grass', 'Gravel', 'Asphalt', 'Sand', 'Ice', 'Overall']
+    tick_labels = ['Gravel', 'Grass', 'Asphalt', 'Sand', 'Ice', 'Overall']
     ticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     axs.set_xticks(ticks, tick_labels)
     #fig.tight_layout()
@@ -383,16 +388,76 @@ def print_color_list():
         print("Hex color code: ", mpl.colors.to_hex(color_dict[key], keep_alpha=False))
 
 
+def keep_only_steady_state_and_filter(df,size_col,nb_steady_state,yaw_filter =4.0,
+                                    keep_only_steady_state = True,
+                                    filter_data = True,col_to_filter_with="cmd_body_yaw_vel"):
+    
+    nb_values = df.shape[0]
+    # Create the filter 
+    cmd_yaw = df[col_to_filter_with].to_numpy().reshape((nb_values//size_col, size_col))
+
+    cmd_yaw = np.median(cmd_yaw,axis=1)
+    
+    cmd_yaw_filter = np.array([cmd_yaw]*size_col).T
+    filter = cmd_yaw_filter <=yaw_filter
+    
+    dico = {}
+    print(df.shape)
+    for col in list(df.columns):
+
+        
+
+        
+
+        masked = np.zeros((nb_values,1))
+        
+        masked_reshape = masked.reshape((nb_values//size_col, size_col))
+
+        
+        masked_reshape[:,-nb_steady_state:] = np.ones((masked_reshape.shape[0],nb_steady_state))
+
+        data_matrix = df[col].to_numpy().reshape((nb_values//size_col, size_col))
+        
+        if keep_only_steady_state:
+            mask = (masked_reshape ==1)
+
+            if filter_data:
+
+                mask = mask&filter
+            
+        else:
+            
+            mask = np.ones_like(masked_reshape) == 1.0
+
+            if filter_data:
+                mask = filter
+
+        final_df = data_matrix[mask]
+
+        dico[col] = np.ravel(final_df)
+
+    print(pd.DataFrame.from_dict(dico).shape)
+    return pd.DataFrame.from_dict(dico)
+
+
 if __name__ =="__main__":
     
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/warthog_metric_cmd_raw_slope_metric.csv"
     df_warthog = pd.read_csv(path_to_raw_result)
+    
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
     df_husky = pd.read_csv(path_to_raw_result)
     #df_husky = df_husky.drop()
     df = pd.concat([df_warthog,df_husky],axis=0)
-    filtered_df = df_warthog.loc[(np.abs(df_warthog["cmd_body_yaw_vel"]) <= 4.0)]
 
+    #filtered_df = df_warthog[(np.abs(df_warthog["cmd_body_yaw_vel"]) < 4.0)]
+
+    #filtered_df = keep_only_steady_state_and_filter(df_warthog,119,39)
+
+    filtered_df = keep_only_steady_state_and_filter(df_warthog,119,39,yaw_filter =4.0,
+                                    keep_only_steady_state = True,
+                                    filter_data = True)
+    
     #df_test = pd.read_pickle("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl")
     median_easy = np.median(np.abs(filtered_df.total_energy_metric.loc[filtered_df["terrain"] == ("asphalt" or "gravel" or "grass")]))
     median_ice = np.median(np.abs(filtered_df.total_energy_metric.loc[filtered_df["terrain"] == "ice"]))
@@ -401,7 +466,7 @@ if __name__ =="__main__":
     print("overall: ", median_ice/median_overall)
     
     #boxplot(df)
-    boxplot_all_terrain_warthog_robot(df)
+    boxplot_all_terrain_warthog_robot(filtered_df)
     
     #print(df.columns)
     #plot_scatter_metric(df)
