@@ -25,7 +25,7 @@ if ROBOT == "husky":
 elif ROBOT == "warthog":
     DATASET_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
     GEOM_PICKLE = "drive_datasets/results_multiple_terrain_dataframe/warthog_geom_limits_by_terrain_for_filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
-    AXIS_LIM = (-6,6)
+    AXIS_LIM = (-5,5)
     # Gaussian parameters
     MU_X = 0
     MU_Y = 0
@@ -34,25 +34,25 @@ elif ROBOT == "warthog":
     RHO = 0
 TOGGLE_CLINE = True
 TOGGLE_PROPORTIONNAL = False
-#LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt"]#, "tile"]
-LIST_OF_TERRAINS_TO_PLOT = ["ice", "grass"]
+#LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt","tile"]
+LIST_OF_TERRAINS_TO_PLOT = ["ice", "asphalt"]
 
 font = {'family' : 'normal',
         'weight' : 'bold',
-        'size'   : 10}
+        'size'   : 8}
 plt.rc('font', **font)
 plot_fs = 12
 plt.rc('font', family='serif', serif='Times')
 plt.rc('text', usetex=True)
-plt.rc('xtick', labelsize=9)
-plt.rc('ytick', labelsize=9)
-plt.rc('axes', labelsize=10)
+plt.rc('xtick', labelsize=8)
+plt.rc('ytick', labelsize=8)
+plt.rc('axes', labelsize=8)
 mpl.rcParams['lines.dashed_pattern'] = [2, 2]
 mpl.rcParams['lines.linewidth'] = 1.0 
 
 # List of cline factor
-CLINE_DICT = {"slip_body_x_ss":[-0.3, 0.3],
-               "slip_body_y_ss":[-0.2, 0.2], 
+CLINE_DICT = {"slip_body_x_ss":[-0.2, 0.2],
+               "slip_body_y_ss":[-0.1, 0.1], 
                "slip_body_yaw_ss":[-3, 3]}
 
 
@@ -323,6 +323,8 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
             else:
                 dict_vmax_std[list_colormap[i]] = vmax_std
 
+    dict_vmax_mean["PuOr"] = 2
+
     for i in range(size):
         terrain = list_terrain[i]
         print(f"Processing terrain: {terrain}")
@@ -361,25 +363,31 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
 
         axs_mean_plot[0].set_title(f"{terrain[0].upper() + terrain[1:]}")
         axs_std_plot[0].set_title(f"{terrain[0].upper() + terrain[1:]}")
-        axs_mean_plot[-1].set_xlabel(r"${}^{B}u_\theta$ (rad/s)", labelpad=0.1)
-        axs_mean_plot[-1].set_xlabel(r"${}^{B}u_\theta$ (rad/s)", labelpad=0.1)
+        axs_mean_plot[-1].set_xlabel("Angular speed\ncommand (rad/s)", labelpad=0.1)
+        axs_mean_plot[-1].set_xlabel("Angular speed\ncommand (rad/s)", labelpad=0.1)
 
         if i == 0:
             for ax in axs_mean_plot:
-                ax.set_ylabel(r"${}^{B}u_x$ (m/s)", labelpad=0.1)
+                ax.set_ylabel("Longitudinal speed\ncommand (m/s)", labelpad=0.1)
             for ax in axs_std_plot:
-                ax.set_ylabel(r"${}^{B}u_x$ (m/s)", labelpad=0.1)
+                ax.set_ylabel("Longitudinal speed\ncommand (m/s)", labelpad=0.1)
 
     for i in range(3):
         for j in range(size):
             axs_mean[i,j].set_facecolor("black")
-            axs_mean[i,j].set_aspect('equal', 'box')
+            #axs_mean[i,j].set_aspect('equal', 'box')
+            axs_mean[i,j].set_ylim(-5,5)
             axs_std[i,j].set_facecolor("black")
-            axs_std[i,j].set_aspect('equal', 'box')
+            #axs_std[i,j].set_aspect('equal', 'box')
             if j != 0:
                 axs_mean[i,j].set_yticks([])
             if i != 2:
                 axs_mean[i,j].set_xticks([])
+            if i == 2:
+                axs_mean[i,j].set_xticks([-4,0,4])
+
+    #axs_mean[0,2].set_xticks([-4,0,4])
+    #axs_mean[1,2].set_xticks([-4,0,4])
 
     if size == 1:
         # Add a colorbar
@@ -398,11 +406,13 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     else:
         # Add a colorbar
         cbar = plt.colorbar(list_im_mean[0], cax=axs_mean[0,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_x$ (m/s)", labelpad=0.1)  
+        cbar.set_label("Longitudinal slip (m/s)", labelpad=0.1)  
         cbar = plt.colorbar(list_im_mean[1], cax=axs_mean[1,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_y$ (m/s)", labelpad=0.1)
+        cbar.set_label("Lateral slip (m/s)", labelpad=0.1)
         cbar = plt.colorbar(list_im_mean[2], cax=axs_mean[2,axs_mean.shape[1]-1], pad = 0.1, shrink=0.5)
-        cbar.set_label(r"${}^{B}g_\theta$ (rad/s)")
+        cbar.set_label("Angular slip (rad/s)")
+        cbar.set_ticks([-3,0,3])
+        cbar.set_ticklabels(["-3","0","3"])
         cbar = plt.colorbar(list_im_std[0], cax=axs_std[0,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
         cbar.set_label(r"${}^{B}g_x$ (m/s)", labelpad=0.1)
         cbar = plt.colorbar(list_im_std[1], cax=axs_std[1,axs_std.shape[1]-1], pad = 0.1, shrink=0.5)
@@ -415,7 +425,7 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
     std_filename = f"std_heat_map_gma_{ROBOT}.pdf"
     
     # Increase the width spacing between the subplots
-    #fig_mean.tight_layout()
+    fig_mean.tight_layout()
     fig_mean.subplots_adjust(wspace=0.05, hspace=0.25)
     # Manually offset the colorbar
     fig_mean.subplots_adjust(right=0.85)
@@ -468,7 +478,7 @@ def plot_statistics_by_nbr_samples(data_path, geom_path):
         std_std_y = []
         std_std_yaw = []
 
-        for j in range(2, 250):
+        for j in range(2, 250, 1):
             if(j % 2 == 0):
                 print(f"Processing {j} samples")
             dict_results = process_data(df_terrain, list_col_interest, terrain, geom_to_filter = geom_by_terrain, 
@@ -479,14 +489,17 @@ def plot_statistics_by_nbr_samples(data_path, geom_path):
             std_std_y.append(dict_results["list_data_std_std"][1])
             std_std_yaw.append(dict_results["list_data_std_std"][2])
 
-        axs[0].scatter(nbr_samples, std_std_x)
-        axs[1].scatter(nbr_samples, std_std_y)
-        axs[2].scatter(nbr_samples, std_std_yaw)
+        # Set the title of the subplots
+        axs[0, i].set_title(f"{terrain[0].upper() + terrain[1:]}")
+        axs[0, i].scatter(nbr_samples, std_std_x, s=2)
+        axs[1, i].scatter(nbr_samples, std_std_y, s=2)
+        axs[2, i].scatter(nbr_samples, std_std_yaw, s=2)
         # Save the nbr_samples and the std_std to a csv file for each terrain for further analysis
         data = {"nbr_samples":nbr_samples, "std_std_x":std_std_x, "std_std_y":std_std_y, "std_std_yaw":std_std_yaw}
-        df = pd.DataFrame(data)
-        df.to_csv(f"tests_figures/std_std_{ROBOT}_{terrain}.csv")
+        df_csv = pd.DataFrame(data)
+        df_csv.to_csv(f"tests_figures/std_std_{ROBOT}_{terrain}.csv")
     
+    plt.ylim(0, 0.35)
     fig.savefig(f"tests_figures/std_std_{ROBOT}.pdf",format="pdf")
     plt.show()
 

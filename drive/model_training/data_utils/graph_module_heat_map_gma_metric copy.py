@@ -38,8 +38,7 @@ LIST_OF_TERRAINS_TO_PLOT = ["grass","gravel","mud","sand","ice","asphalt"]
 #LIST_OF_TERRAINS_TO_PLOT = ["ice", "grass"]
 #LIST_OF_TERRAINS_TO_PLOT = ["ice","asphalt"]
 
-SQUARES_TO_ANALYZE = [{'x': -0.5, 'y':4, 'width': 1, 'height': 1, 'axis': 'linear'},
-                      {'x': 3.5, 'y':-1, 'width': 0.5, 'height': 2, 'axis': 'yaw'},]
+SQUARES_TO_ANALYZE = [{'x': -4, 'y':-0.5, 'width': 8, 'height': 1, 'axis': 'yaw'}]
 
 font = {'family' : 'normal',
         'weight' : 'bold',
@@ -401,7 +400,7 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
                 ax.set_ylabel("Longitudinal speed command (m/s)", labelpad=0.1)
 
     df = pd.DataFrame(data)
-    df.to_csv(f"tests_figures/mean_heat_map_gma_{ROBOT}_metric.csv")
+    df.to_csv(f"tests_figures/mean_heat_map_gma_{ROBOT}_metric_center_square.csv")
 
     # Add white rectangles on all the plots from -5 to -4 and 4 to 5 on x axis with the full height of the plot
     #for i in range(nbr_rows):
@@ -424,13 +423,13 @@ def plot_heat_map_gaussian_moving_average(data_path, geom_path, cline = True, pr
                 axs_mean[i,j].set_xticks([-4, 0, 4])
 
     # Draw the squares to analyze
-    #for i in range(size):
-    #    terrain = list_terrain[i]
-    #    geom = geom_by_terrain[terrain]
-    #    for square in SQUARES_TO_ANALYZE:
-    #        for j in range(nbr_rows):
-    #            axs_mean[j,i].add_patch(plt.Rectangle((square['x'], square['y']), square['width'], square['height'], fill=False, color='black', alpha=1))
-    #            axs_std[j,i].add_patch(plt.Rectangle((square['x'], square['y']), square['width'], square['height'], fill=False, color='black', alpha=1))
+    for i in range(size):
+        terrain = list_terrain[i]
+        geom = geom_by_terrain[terrain]
+        for square in SQUARES_TO_ANALYZE:
+            for j in range(nbr_rows):
+                axs_mean[j,i].add_patch(plt.Rectangle((square['x'], square['y']), square['width'], square['height'], fill=False, color='black', alpha=1))
+                axs_std[j,i].add_patch(plt.Rectangle((square['x'], square['y']), square['width'], square['height'], fill=False, color='black', alpha=1))
 
 
     if size == 1:

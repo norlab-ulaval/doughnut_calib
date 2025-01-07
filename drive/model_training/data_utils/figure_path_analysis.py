@@ -23,14 +23,14 @@ TERRAIN_COLOR_DICT = {"asphalt":"lightgrey", "ice":"aliceblue","gravel":"papayaw
 
 font = {'family' : 'normal',
         'weight' : 'bold',
-        'size'   : 10}
+        'size'   : 8}
 plt.rc('font', **font)
 plot_fs = 12
 plt.rc('font', family='serif', serif='Times')
 plt.rc('text', usetex=True)
-plt.rc('xtick', labelsize=9)
-plt.rc('ytick', labelsize=9)
-plt.rc('axes', labelsize=10)
+plt.rc('xtick', labelsize=8)
+plt.rc('ytick', labelsize=8)
+plt.rc('axes', labelsize=8)
 mpl.rcParams['lines.dashed_pattern'] = [2, 2]
 mpl.rcParams['lines.linewidth'] = 1.0 
 mpl.rcParams['markers.fillstyle'] = 'full'
@@ -139,9 +139,9 @@ def draw_path(ax, limits, path, point_size=2, color='b', alpha=0.07, downsample=
     v = np.sin(path[:, 2])
     # Plot the orientation of the robot as a quiver plot with only 1 point out of 10
     if quiver:
-        im = ax.quiver(path[::downsample, 1], path[::downsample, 0], v[::downsample], u[::downsample], angles='xy', scale_units='xy', scale=1, color=color, label=label)
+        im = ax.quiver(path[::downsample, 1], path[::downsample, 0], v[::downsample], u[::downsample], angles='xy', scale_units='xy', scale=1, color=color, label=label, rasterized=True)
     else:
-        im = ax.scatter(path[::downsample, 1], path[::downsample, 0], edgecolor='none', facecolor=color, s=point_size, alpha=alpha, label=label, marker='.')
+        im = ax.scatter(path[::downsample, 1], path[::downsample, 0], edgecolor='none', facecolor=color, s=point_size, alpha=alpha, label=label, marker='.', rasterized=True)
         #im = ax.plot((path[::downsample, 1], path[::downsample, 0]), color=color, linewidth=point_size, alpha=alpha, label=label)
 
     return im
@@ -370,8 +370,6 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
     plt.rcParams['font.family'] = 'serif'  # Use a LaTeX-compatible font
     terrains = df['terrain'].unique()
     for terrain in terrains:
-        if terrain != "sand":
-            continue
         print("Terrain: ", terrain)
         # Create a subfolder for the terrain if it does not exist with all the subfolders
         os.makedirs(f"tests_figures/{terrain}/planned_path", exist_ok=True)
@@ -402,7 +400,7 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
         for cmd_vel, cmd_angle, max_linear_speed, i in zip(data_dict["cmd_vel_x"], data_dict["cmd_vel_yaw"], data_dict["max_lin_speed"], range(cmd_nbr)):
             cmd = Command(cmd_vel, cmd_angle, TIME_DELTA, NBR_STEPS)
             planned_path_global = draw_path_from_command(b_u_ax, range_limit, cmd, color='orange', downsample=1, alpha=0.14)
-            draw_path(b_p_ax, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color='blue', downsample=1)
+            draw_path(b_p_ax, range_limit, np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T, color='green', downsample=1)
 
             cmd = Command(data_dict["cmd_vel_x"][i], data_dict["cmd_vel_yaw"][i], TIME_DELTA, NBR_STEPS, [data_dict["init_tf_x"][i], data_dict["init_tf_y"][i], data_dict["init_tf_yaw"][i]])
             path_raw = np.array([data_dict["icp_x"][i,:], data_dict["icp_y"][i,:], data_dict["icp_yaw"][i,:]]).T
@@ -499,9 +497,9 @@ def create_figure(df, range_limit=RANGE_LIMIT, absolute=True):
         for ax in [b_u_ax, b_p_ax, g_p_ax, g_p_heatmap_ax]:
             ax.tick_params(axis='both', which='major')
         # Save the final figure with high resolution
-        fig.savefig(f"tests_figures/{terrain}/final_figure.png", format='png', dpi=1200)
-        fig.savefig(f"tests_figures/{terrain}/final_figure.pdf", format='pdf', dpi=300)
-        fig.savefig(f"tests_figures/{terrain}/final_figure.svg", format='svg', dpi=300)
+        fig.savefig(f"tests_figures/{terrain}/fig_path_analysis.png", format='png', dpi=1200)
+        fig.savefig(f"tests_figures/{terrain}/fig_path_analysis.pdf", format='pdf', dpi=300)
+        fig.savefig(f"tests_figures/{terrain}/fig_path_analysis.svg", format='svg', dpi=300)
 
     return
 
