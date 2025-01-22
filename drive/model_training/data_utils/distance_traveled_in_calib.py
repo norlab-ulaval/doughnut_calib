@@ -118,6 +118,6 @@ if __name__ == "__main__":
                                 # print_column_unique_column(df_raw)
                                 extract_distance_travelled(df_raw)
                                 compute_area(df_raw)
-                                plt.show()
+                                # plt.show()
 
                                 
