@@ -163,8 +163,9 @@ def reorder_boxplot(list_array, list_color,list_terrain):
 
     # compute the list of median 
     list_median = []
-    for terrain in list_array:
-        list_median.append(terrain.median())
+    for data in list_array:
+        #print(data)
+        list_median.append(data.median())
     # List median 
     np_array = np.array(list_median)
 
@@ -379,6 +380,136 @@ def boxplot_all_terrain_warthog_robot(df,alpha_param=0.2,robot="warthog",
     plt.show()
     
     print(path_to_save)
+
+
+
+def boxplot_all_terrain_husky_warthog_robot(df,alpha_param=0.2,robot_list=["warthog"], 
+                                    alpha_bp=0.4,path_to_save="figure/fig_metric_boxplot.pdf",
+                                    linewidth_overall = 5):
+
+    #df = df.loc[df.robot == "warthog"]
+
+    font = {'family' : 'normal',
+        'weight' : 'bold',
+        'size'   : 12}
+
+    plt.rc('font', **font)
+    plt.rc('font', family='serif', serif='Times')
+    plt.rc('text', usetex=True)
+    plt.rc('xtick', labelsize=8)
+    plt.rc('ytick', labelsize=8)
+    plt.rc('axes', labelsize=8)
+    mpl.rcParams['lines.dashed_pattern'] = [2, 2]
+    mpl.rcParams['lines.linewidth'] = 1.0
+
+    fig, axs = plt.subplots(1,1)
+    fig.set_figwidth(88/25.4)
+    fig.set_figheight(88/25.4 / 1.618)
+
+    
+    # fig.subplots_adjust(hspace=0.2 ,wspace=0.4)
+    
+    list_array_transl = []
+    list_array_rot = []
+    list_array_total = []
+    list_terrain = []
+    list_robot = []
+    list_robot_name = []
+    
+    dico_robot_name = {"husky":"orange","warthog": "grey","Overall":"blue"}
+    color_dict = {"asphalt":"grey", "ice":"blue","gravel":"#cda66a",
+                "grass":"green","sand":"orangered","avide":"grey",
+                "avide2":"grey","mud":"darkgoldenrod","tile":"lightcoral",
+                "Overall":"white"}
+    
+    # Compute and reorder the boxplot 
+    dico_data = {}
+    for terrain in list(df.terrain.unique()):
+        df_terrain = df.loc[df.terrain==terrain]
+        nb_robot = 0
+        
+        for robot in list(df_terrain.robot.unique()):
+            
+            
+            if terrain == "tile":
+                continue
+            else:
+
+                nb_robot += 1 
+                df_robot = df_terrain.loc[df_terrain.robot==robot]
+                data = df_robot.total_energy_metric.loc[df_robot["terrain"] == terrain]
+                list_array_total.append(data)
+                # list_array_rot.append(df_robot.rotationnal_energy_metric.loc[df_robot["terrain"] == terrain])
+                # list_array_transl.append(df_robot.translationnal_energy_metric.loc[df_robot["terrain"] == terrain])
+
+                list_robot_name.append(robot)
+                list_robot.append(nb_robot)
+                list_terrain.append(terrain)
+                
+                if robot == "husky":
+                    linestyle = "--"
+                elif robot == "warthog":
+                    linestyle = "-"
+                dico_data[f"{terrain}_{robot}"] = {"color":color_dict[terrain], "robot":robot,
+                                                "ls":linestyle,  "data":data}
+
+    big_delta = 0.30 
+    small_delta = 0.20 
+    box_width = 0.15
+    delta_start = 0.10
+    dico_data[f"overall_husky"] = {"color":"white", "robot":"husky", "data":df.total_energy_metric.loc[df.robot=="husky"],"ls":"--" }
+    dico_data[f"overall_warthog"] = {"color":"white", "robot":"warthog", "data":df.total_energy_metric.loc[df.robot=="warthog"],"ls":"-"}
+    
+
+    order_to_present = ["gravel_warthog", "grass_warthog","grass_husky", "asphalt_warthog",
+                        "asphalt_husky", "sand_warthog","ice_warthog", "overall_husky",
+                        "overall_warthog"]
+    list_position = np.array([big_delta,2*big_delta,2*big_delta+small_delta, 3* big_delta+small_delta, 3* big_delta+ 2 * small_delta,  
+                            4* big_delta+ 2 * small_delta, 5* big_delta+ 2 * small_delta ,
+                            6* big_delta+ 2 * small_delta,6* big_delta+ 3 * small_delta ]) - (big_delta + delta_start)
+    
+    pos_vlines = 5.5* big_delta+ 2 * small_delta- (big_delta + delta_start)
+    list_array_total = [dico_data[value]["data"] for value in order_to_present]
+    list_color_total = [dico_data[value]["color"] for value in order_to_present]
+    list_patch_linestyle = [dico_data[value]["ls"] for value in order_to_present]
+    
+    # box1 = axs[0].boxplot(list_array_rot,showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
+    # box2 = axs[1].boxplot(list_array_transl,showfliers=False,patch_artist=True,positions=list_position,widths=box_width)
+    box1 = axs.boxplot(list_array_total,whis=(2.5, 97.5),showfliers=False,patch_artist=True, positions=list_position,widths=box_width)
+
+    for box in [box1]:  # ,box2,box3
+        
+        for patch, color,linestyle in zip(box['boxes'],list_color_total,list_patch_linestyle):
+
+            patch.set_facecolor(color)  # Change to your desired color
+            patch.set_alpha(alpha_bp)
+            patch.set_linestyle(linestyle)
+        # Change the median line color to black
+        for median in box['medians']:
+            median.set_color('black')
+
+    tick_labels = ['Gravel', 'Grass', 'Asphalt', 'Sand', 'Ice', "Overall"]
+    ticks = np.array([big_delta, 2*big_delta+small_delta/2,  3*big_delta+3*small_delta/2,  
+                    4* big_delta+ 2 * small_delta,  5* big_delta+ 2 * small_delta,
+                    6* big_delta+ 5/2 * small_delta ]) - (big_delta + delta_start)
+    axs.set_xticks(ticks, tick_labels)
+    
+    for ax in np.ravel(axs):
+        ax.set_ylabel("Unpredictability metric")
+        ax.set_xlim(min(list_position)-small_delta, max(list_position)+small_delta)
+    
+    axs.vlines(pos_vlines,ymax=1.1,ymin=0,color="black",alpha=0.5,linewidth=0.75, linestyles="-.")
+    axs.set_ylim(0,1.1)
+    #fig.tight_layout()
+    #fig.subplots_adjust(left=.15, bottom=.16, right=.99, top=.97)
+    fig.subplots_adjust(left=.13, bottom=.10, right=.99, top=.97,hspace=0.1)
+    
+    fig.savefig(path_to_save,dpi=300)
+    fig.savefig(path_to_save[:-4]+".png",dpi=300)
+    plt.show()
+    
+    print(path_to_save)
+
 def print_color_list():
     color_dict = {"asphalt":"grey", "ice":"blue","gravel":"orange","grass":"green","sand":"orangered","avide":"grey","avide2":"grey","mud":"darkgoldenrod","tile":"lightcoral"}
     for key in color_dict:
@@ -464,9 +595,15 @@ if __name__ =="__main__":
     median_overall = np.median(np.abs(filtered_df.total_energy_metric))
     print("easy: ", median_ice/median_easy)
     print("overall: ", median_ice/median_overall)
-    
+    print(df_husky.terrain.unique())
+    print(df_husky.shape)
+    df_husky = df_husky[(df_husky.terrain == "grass") | (df_husky.terrain=="asphalt")]
+    print(df_husky.columns)
+    print(df.columns)
+
+    df_concat = pd.concat([df_warthog,df_husky])
     #boxplot(df)
-    boxplot_all_terrain_warthog_robot(filtered_df)
+    boxplot_all_terrain_husky_warthog_robot(df_concat,robot_list=["husky","warthog"])
     
     #print(df.columns)
     #plot_scatter_metric(df)

@@ -10,7 +10,7 @@ import pathlib
 
 import matplotlib.animation as animation
 from matplotlib import colormaps as cm
-from extractors import *
+from drive.model_training.data_utils.extractors import *
 from tqdm import tqdm
 import yaml
 
