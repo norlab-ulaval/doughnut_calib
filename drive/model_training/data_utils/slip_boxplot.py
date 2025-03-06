@@ -315,8 +315,7 @@ def slip_boxplot_both_robot(df,alpha_param=0.3,
 
     
     order_to_present = ["gravel_warthog", "grass_warthog","grass_husky", "asphalt_warthog",
-                        "asphalt_husky", "sand_warthog","ice_warthog", "overall_husky",
-                        "overall_warthog"]
+                        "asphalt_husky", "sand_warthog","ice_warthog", "overall_warthog", "overall_husky"]
     big_delta = 0.30 
     small_delta = 0.20 
     box_width = 0.15
@@ -326,7 +325,7 @@ def slip_boxplot_both_robot(df,alpha_param=0.3,
                             6* big_delta+ 2 * small_delta,6* big_delta+ 3 * small_delta ]) - (big_delta + delta_start)
     
     pos_vlines = 5.5* big_delta+ 2 * small_delta- (big_delta + delta_start)
-
+    
     list_color_total = [dico_data[value]["color"] for value in order_to_present]
     list_patch_linestyle = [dico_data[value]["linestyle"] for value in order_to_present]
 
@@ -355,9 +354,17 @@ def slip_boxplot_both_robot(df,alpha_param=0.3,
         for median in box['medians']:
             median.set_color('black')
 
+        for i, linestyle in enumerate(linestyle_list):
+            box['whiskers'][i*2].set_linestyle(linestyle)
+            box['whiskers'][i*2 + 1].set_linestyle(linestyle)
+            box['caps'][i*2].set_linestyle(linestyle)
+            box['caps'][i*2 + 1].set_linestyle(linestyle)
+
     for ax in np.ravel(axs):
         ax.set_xticks([])       # Remove the ticks
         ax.set_xticklabels([])  # Remove the labels
+
+        
         
     axs[0].set_ylabel("Longitudinal slip (m/s)")
     axs[1].set_ylabel("Lateral slip (m/s)")
@@ -375,6 +382,11 @@ def slip_boxplot_both_robot(df,alpha_param=0.3,
     axs[0].set_ylim(-0.1, 1.5)
     axs[1].set_ylim(-0.1, 1.5)
     axs[2].set_ylim(-0.1, 5)
+    
+    for ax in axs:
+        ylim =ax.get_ylim()
+        ax.vlines(pos_vlines,ymax=ylim[0],ymin=ylim[1],
+                color="black",alpha=0.5,linewidth=0.75, linestyles="-.")
     
     # Add the vertical thick line 
     # axs[0].vlines(list_pos_hfill[-3],ymax=10,ymin=-10,color="black",alpha=0.5, linewidth=0.75,linestyles="--")

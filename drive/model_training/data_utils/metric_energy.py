@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd 
 import pathlib 
 import yaml
-from extractors import *
+from drive.model_training.data_utils.extractors import *
 from drive.model_training.models.kinematic.ideal_diff_drive import Ideal_diff_drive
 import pickle 
 import matplotlib.pyplot as plt 
@@ -160,11 +160,12 @@ class KineticEnergyMetric(DifficultyMetric):
                 self.basewidth = robot_param["basewidth"]
                 self.wheel_radius = robot_param["wheel_radius"]
                 self.masse = robot_param["masse"]
-        self.inertia_constraints = (self.width**2 + self.length**2)/12
+                self.compute_intertia()
         self.metric_name = "kinetic_energy"
-
-        
         print(self.inertia_constraints )
+
+    def compute_intertia(self):
+        self.inertia_constraints = (self.width**2 + self.length**2)/12
     def compute_energy(self,vx,vy,omega_body):
         """_summary_
 
@@ -961,7 +962,6 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
         metric_scatter_cmd.update(metric_scatter_wheels)
         return resulting_energy_cmd,resulting_energy_wheels, metric_energy_raw_wheels,metric_energy_raw_cmd,metric_scatter_cmd
     
-
     def compute_all_terrain(self,dataset,multiple_terrain=False,n_rows=-1,list_lim_vel_x = [5.0],list_lim_vel_yaw=[5.0],save_video=True):
 
         new_file =False
@@ -1065,6 +1065,19 @@ class SlopeMetric(KineticEnergyMetricWheelEncoder):
 
         
         return df_all_terrain
+
+    def combpute_for_var_basewidth(self,width,length, dataset,terrain,n_rows=-1,lim_vel_yaw = 5.0,lim_vel_x=5.0,save_video=False):
+
+        
+        self.length = length
+        self.width = width
+
+        self.compute_intertia()
+        dico_data = dataset.get_sub_sample(terrain,lim_vel_yaw,lim_vel_x)
+        shape = dico_data["cmd_left_wheel"].shape                                                                   
+        result_terrain_cmd, result_terrain_encoder, metric_energy_raw_wheels,metric_energy_raw_cmd,metric_scatter_cmd= self.compute_kinetic_energy_metric(dico_data,dataset.datasets_info["n_steady_state"],n_rows=n_rows)
+
+        return metric_energy_raw_cmd
 
     def compute_all_terrain_variable_steps(self, dataset,multiple_terrain=False,list_lim_vel_x = [5.0],list_lim_vel_yaw=[5.0],n_division=51):
     
