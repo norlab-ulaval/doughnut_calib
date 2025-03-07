@@ -428,16 +428,16 @@ def graph_of_future_wheel(path,path_to_geom,to_plot="mean",prefix="wheel_mean"):
     plt.show()
 
 if __name__=="__main__":
-    path = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl")
-    path_to_geom = pathlib.Path("/home/nicolassamson/ros2_ws/src/DRIVE/drive_datasets/results_multiple_terrain_dataframe/geom_limits_by_terrain_for_filtered_cleared_path_warthog_max_lin_speed_all_speed_all_terrain_steady_state_dataset.pkl")
+    path = pathlib.Path("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl")
+    path_to_geom = pathlib.Path("drive_datasets/results_multiple_terrain_dataframe/warthog_geom_limits_by_terrain_for_filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl")
     
     
     to_plot = "mean"
-    graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_mean")
+    #graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_mean")
     to_plot = "std"
     #graph_of_future_wheel(path,path_to_geom,to_plot,prefix="wheel_std")
     to_plot = "mean"
-    #graph_of_future_body(path,path_to_geom,to_plot,prefix="mean")
+    graph_of_future_body(path,path_to_geom,to_plot,prefix="mean")
     to_plot = "std"
     #graph_of_future_body(path,path_to_geom,to_plot,prefix="std") 
 

@@ -2,7 +2,7 @@ import shapely
 import numpy as np 
 from shapely.geometry import Polygon, Point
 from shapely import intersection
-from extractors import *
+from drive.model_training.data_utils.extractors import *
 import matplotlib.pyplot as plt
 import pathlib
 import pickle 

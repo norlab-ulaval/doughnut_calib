@@ -411,6 +411,8 @@ def compute_slip_angle(df,column_vx= "step_frame_vx", column_vy= "step_frame_vy"
     
     dico_data = create_columns_names_from_dict_with_names(["step_frame_slip_angle"],{"step_frame_slip_angle":slip_angle},{})
 
+    df.reset_index(inplace=True)
+
     df2add = pd.DataFrame.from_dict(dico_data)
     df2add["slip_angle_ss"] = slip_angle_ss
     df_final = pd.concat([df,df2add],axis=1)
@@ -592,7 +594,6 @@ def slip_angle_boxplot_both_robot(df,alpha_param=0.3,
     fig.savefig(path_to_save[:-4]+".png",dpi=300)
 
 
-
 if __name__ =="__main__":
     
     path_to_warthog_results = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset.pkl"
@@ -606,13 +607,17 @@ if __name__ =="__main__":
 
     path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset.pkl"
     df_husky = pd.read_pickle(path_to_raw_result)
+    df_husky = compute_slip_angle(df_husky)
+    df_warthog = compute_slip_angle(df_warthog)
+
+    df_husky.to_pickle("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_husky_following_robot_param_all_terrain_steady_state_dataset_slip_angle.pkl")
+    df_warthog.to_pickle("drive_datasets/results_multiple_terrain_dataframe/filtered_cleared_path_warthog_following_robot_param_all_terrain_steady_state_dataset_slip_angle.pkl")
     
     df_combined =  df = pd.concat([df_warthog,df_husky],axis=0,ignore_index=True)
     
-    df_combined_slip = compute_slip_angle(df_combined)
-
-    slip_angle_boxplot_both_robot(df_combined_slip,abs=True)
-    slip_angle_boxplot_both_robot(df_combined_slip,violin=True,abs=True)
+    
+    slip_angle_boxplot_both_robot(df_combined,abs=True)
+    slip_angle_boxplot_both_robot(df_combined,violin=True,abs=True)
     #slip_boxplot_both_robot(df_combined_slip)
     # path_to_raw_result = "drive_datasets/results_multiple_terrain_dataframe/metric/husky_metric_cmd_raw_slope_metric.csv"
     # df_husky = pd.read_csv(path_to_raw_result)
